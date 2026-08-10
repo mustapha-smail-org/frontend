@@ -11,7 +11,11 @@ function summary(index: number, overrides: Record<string, unknown> = {}) {
   return {
     id: `evt-${String(index).padStart(3, '0')}`,
     title: `Event number ${index}`,
-    summary: `Summary for event ${index}.`,
+    // Mirrors the real backend: HTML, truncated mid-tag by `summarize()`, and
+    // in this fixture also carrying a hostile fragment.
+    summary:
+      `<p>Summary for event ${index}.</p>` +
+      '<script>window.__pwned = true</script> Book at <a href="https://exa',
     categories: ['Concert'],
     pricing: index % 3 === 0 ? 'FREE' : index % 3 === 1 ? 'PAID' : 'NOT_SPECIFIED',
     arrondissement: 11,
@@ -67,7 +71,12 @@ export const MAP_PAGE_TWO = {
 export const DETAIL = {
   id: 'evt-001',
   title: 'Event number 1',
-  description: 'A full description.\n\nSecond paragraph.',
+  // Mirrors real upstream data: HTML, including a hostile fragment that must
+  // never reach the DOM as markup.
+  description:
+    '<p>A full <b>description</b>.</p>' +
+    '<p>Book via <a href="https://example.org/tickets">our partner</a>.</p>' +
+    '<script>window.__pwned = true</script><img src=x onerror="window.__pwned = true">',
   categories: ['Concert', 'Musique'],
   officialUrl: 'https://example.org/event',
   startAt: '2026-09-12T20:30:00+02:00',
@@ -90,7 +99,7 @@ export const DETAIL = {
   },
   pricing: {
     type: 'payant',
-    detail: 'From €28',
+    detail: '<p>From <strong>€28</strong></p><script>window.__pwned = true</script>',
     accessType: 'Ticket required',
     bookingUrl: 'https://example.org/book',
     bookingLinkText: 'Buy tickets',

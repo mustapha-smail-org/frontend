@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+import { ThemeToggle } from '@/shared/theme/ThemeToggle'
+
 /**
  * PRD FR-GLOBAL-001: compact header, brand links home, product descriptor where
  * space permits. No authentication, profile, saved or notification controls.
@@ -31,6 +33,11 @@ export function AppHeader() {
 
         <span aria-hidden="true" className="bg-border hidden h-4 w-px sm:block" />
         <p className="text-muted-foreground hidden text-sm sm:block">Events in Paris</p>
+
+        {/* Theme is the only control in the header; still no auth or account UI. */}
+        <div className="ml-auto">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )

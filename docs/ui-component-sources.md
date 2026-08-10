@@ -74,6 +74,7 @@ All files live in `src/components/ui/`.
 | `select.tsx`    | `…/select.json`                                     | `radix-ui`   | `"use client"` removed; Prettier-formatted                                                                                                                                                                                                                                                                                                                                                        |
 | `separator.tsx` | `…/separator.json`                                  | `radix-ui`   | `"use client"` removed; Prettier-formatted                                                                                                                                                                                                                                                                                                                                                        |
 | `skeleton.tsx`  | `…/skeleton.json`                                   | —            | `"use client"` removed; Prettier-formatted                                                                                                                                                                                                                                                                                                                                                        |
+| `switch.tsx`    | `…/switch.json`                                     | `radix-ui`   | `"use client"` removed; Prettier-formatted. Used by the header dark-mode toggle                                                                                                                                                                                                                                                                                                                   |
 | `sonner.tsx`    | `…/sonner.json`                                     | `sonner`     | `"use client"` removed. **`next-themes` dependency removed** and the theme pinned to `light`: CityPulse ships a single light theme (PRD §7.4), and pulling in a theming library for one string would have added bundle cost for no product value (PRD §7.2 rule 8, §14.3)                                                                                                                         |
 | `tabs.tsx`      | `…/tabs.json`                                       | `radix-ui`   | `"use client"` removed; Prettier-formatted                                                                                                                                                                                                                                                                                                                                                        |
 | `tooltip.tsx`   | `…/tooltip.json`                                    | `radix-ui`   | `"use client"` removed; Prettier-formatted                                                                                                                                                                                                                                                                                                                                                        |
@@ -109,9 +110,15 @@ Consequences:
   `getCategoryAccent()` in `src/shared/utils/category-accent.ts`, with a neutral
   fallback for unrecognised backend categories.
 
-Dark mode is deliberately out of scope for the MVP, so the `.dark` variants that
-ship inside the copied components are inert rather than removed — again, to keep
-future registry diffs clean.
+Dark mode was added after the initial build (a change to PRD §7.4, requested by
+the product owner). Because the token layer was already the single source of
+colour, this required **no changes to any copied component**: the `.dark` block
+in `globals.css` re-points the same shadcn tokens, and the `dark:` variants that
+already shipped inside the registry components became live rather than inert.
+That is the payoff of the normalisation strategy above.
+
+The one place it did **not** hold was Leaflet, which is not a token consumer and
+ships its own hardcoded white surfaces. See the Leaflet note in the README.
 
 ---
 

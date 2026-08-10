@@ -95,9 +95,57 @@ test.describe('Discovery', () => {
       'noopener noreferrer'
     )
 
+    // Maps links point at the configured provider (Google by default).
+    await expect(page.getByTestId('open-in-maps')).toHaveAttribute('href', /google\.com\/maps/)
+    await expect(page.getByTestId('location-maps-link')).toHaveAttribute(
+      'href',
+      /google\.com\/maps/
+    )
+
     await page.getByRole('link', { name: 'Back to results' }).click()
     await expect(page).toHaveURL(/period=TODAY&pricing=FREE/)
     await expect(page.getByTestId('event-list')).toBeVisible()
+  })
+
+  test('renders description and price HTML without executing any of it', async ({ page }) => {
+    await page.goto('/events/evt-001')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    const description = page.getByTestId('event-description')
+    // Real markup is honoured.
+    await expect(description.locator('strong')).toHaveText('description')
+    await expect(description.getByRole('link', { name: 'our partner' })).toHaveAttribute(
+      'href',
+      'https://example.org/tickets'
+    )
+    await expect(page.getByTestId('pricing-detail').locator('strong')).toHaveText('€28')
+
+    // The hostile fragments are gone, not escaped into visible tag soup.
+    await expect(description.locator('img')).toHaveCount(0)
+    await expect(description.locator('script')).toHaveCount(0)
+    await expect(description).not.toContainText('<img')
+    await expect(description).not.toContainText('window.__pwned')
+
+    expect(
+      await page.evaluate(() => (window as never as Record<string, unknown>).__pwned)
+    ).toBeUndefined()
+  })
+
+  test('flattens summary HTML on the list instead of showing tag soup', async ({ page }) => {
+    await page.goto('/')
+    const firstCard = page.getByTestId('event-list').getByRole('listitem').first()
+    await expect(firstCard).toBeVisible()
+
+    await expect(firstCard).toContainText('Summary for event 1.')
+    // No markup leaks through, and the dangling truncated tag is cleaned up.
+    await expect(firstCard).not.toContainText('<p>')
+    await expect(firstCard).not.toContainText('href')
+    await expect(firstCard).not.toContainText('window.__pwned')
+    await expect(firstCard.locator('script')).toHaveCount(0)
+
+    expect(
+      await page.evaluate(() => (window as never as Record<string, unknown>).__pwned)
+    ).toBeUndefined()
   })
 
   test('flow 5 — a shared detail URL loads on its own', async ({ page }) => {

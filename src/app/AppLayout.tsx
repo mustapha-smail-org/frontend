@@ -6,11 +6,12 @@ import { OfflineBanner } from '@/shared/components/OfflineBanner'
 export function AppLayout() {
   return (
     <div className="flex min-h-dvh flex-col overflow-x-hidden">
-      <a
-        href="#main-content"
-        className="sr-only-focusable bg-primary text-primary-foreground absolute top-2 left-2 z-50 rounded-md px-3 py-2 text-sm font-medium"
-      >
-        Skip to content
+      {/*
+        WCAG 2.2 SC 2.4.1. Hidden until it receives keyboard focus — see the
+        `.skip-link` utility in src/styles/globals.css.
+      */}
+      <a href="#main-content" className="skip-link">
+        Skip to results
       </a>
       <AppHeader />
       <OfflineBanner />

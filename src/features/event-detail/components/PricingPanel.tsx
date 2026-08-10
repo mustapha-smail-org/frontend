@@ -2,6 +2,7 @@ import { Tag } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import type { EventPricingDetail } from '@/shared/api/types'
+import { RichText } from '@/shared/components/RichText'
 
 /** Mirrors the backend's own FREE/PAID/NOT_SPECIFIED derivation for display. */
 function classify(type: string | null): 'FREE' | 'PAID' | 'NOT_SPECIFIED' {
@@ -30,7 +31,13 @@ export function PricingPanel({ pricing }: { pricing: EventPricingDetail | null }
         </div>
 
         {pricing?.detail ? (
-          <p className="text-muted-foreground mt-1.5 text-sm">{pricing.detail}</p>
+          // Paid events frequently carry HTML here (tariff tables, booking
+          // links); sanitised and rendered as real elements, never as raw HTML.
+          <RichText
+            content={pricing.detail}
+            className="text-muted-foreground mt-1.5 text-sm"
+            data-testid="pricing-detail"
+          />
         ) : category === 'NOT_SPECIFIED' ? (
           <p className="text-muted-foreground mt-1.5 text-sm">
             The organiser has not published price information. Check the official page before you

@@ -24,37 +24,6 @@ export function safeExternalUrl(value: string | null | undefined): string | null
   return url.toString()
 }
 
-/**
- * Provider-neutral "Open in Maps" link (PRD FR-DETAIL-003).
- * Prefers exact coordinates, otherwise falls back to a complete-enough address.
- * Returns null when neither is usable, so no dead control is rendered.
- */
-export function buildMapSearchUrl(input: {
-  latitude?: number | null
-  longitude?: number | null
-  addressParts?: Array<string | null | undefined>
-}): string | null {
-  const { latitude, longitude, addressParts } = input
-
-  if (
-    typeof latitude === 'number' &&
-    Number.isFinite(latitude) &&
-    typeof longitude === 'number' &&
-    Number.isFinite(longitude) &&
-    latitude >= -90 &&
-    latitude <= 90 &&
-    longitude >= -180 &&
-    longitude <= 180
-  ) {
-    return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`
-  }
-
-  const address = (addressParts ?? [])
-    .map((part) => (typeof part === 'string' ? part.trim() : ''))
-    .filter((part) => part !== '')
-    .join(', ')
-
-  if (address === '') return null
-
-  return `https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`
-}
+// "Open in Maps" links moved to `./map-links.ts` when the provider became
+// configurable; re-exported here so existing imports keep working.
+export { buildMapSearchUrl, mapProviderName, type MapTarget } from './map-links'

@@ -3,7 +3,15 @@ import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import { createMarkerIcon } from '@/features/event-map/components/marker-icon'
-import { MARKER_FOCUS_ZOOM, MAX_ZOOM, tileConfig } from '@/features/event-map/map-config'
+import {
+  DARK_TILE_FILTER,
+  hasDedicatedDarkTiles,
+  MARKER_FOCUS_ZOOM,
+  MAX_ZOOM,
+  tileConfig,
+  tileUrlFor,
+} from '@/features/event-map/map-config'
+import { useTheme } from '@/shared/theme/use-theme'
 
 interface MiniMapCanvasProps {
   latitude: number
@@ -17,9 +25,17 @@ interface MiniMapCanvasProps {
  * above it remains the accessible source of truth (PRD 13.5).
  */
 export default function MiniMapCanvas({ latitude, longitude, title }: MiniMapCanvasProps) {
+  const { resolved: theme } = useTheme()
+  const needsTileFilter = theme === 'dark' && !hasDedicatedDarkTiles
+
   return (
     <div
       className="border-border h-56 w-full overflow-hidden rounded-xl border"
+      style={
+        needsTileFilter
+          ? ({ '--cp-tile-filter': DARK_TILE_FILTER } as React.CSSProperties)
+          : undefined
+      }
       aria-hidden="true"
       data-testid="detail-mini-map"
     >
@@ -35,7 +51,12 @@ export default function MiniMapCanvas({ latitude, longitude, title }: MiniMapCan
         attributionControl
         className="h-full w-full"
       >
-        <TileLayer url={tileConfig.url} attribution={tileConfig.attribution} maxZoom={MAX_ZOOM} />
+        <TileLayer
+          key={theme}
+          url={tileUrlFor(theme)}
+          attribution={tileConfig.attribution}
+          maxZoom={MAX_ZOOM}
+        />
         <Marker
           position={[latitude, longitude]}
           icon={createMarkerIcon('NOT_SPECIFIED', true)}

@@ -74,6 +74,40 @@ describe('EventCard', () => {
     expect(screen.getByText('Location not provided')).toBeInTheDocument()
   })
 
+  describe('summary sanitisation', () => {
+    it('flattens HTML instead of showing tag soup', () => {
+      renderCard({ ...complete, summary: '<p>An <b>excellent</b> evening of jazz.</p>' })
+
+      expect(screen.getByText('An excellent evening of jazz.')).toBeInTheDocument()
+      expect(screen.queryByText(/<p>/)).not.toBeInTheDocument()
+      expect(screen.getByRole('listitem').querySelector('b')).toBeNull()
+    })
+
+    it('never executes anything from the summary', () => {
+      const { container } = renderCard({
+        ...complete,
+        summary: '<img src=x onerror="window.__pwned = 1"> Jazz<script>alert(1)</script>',
+      })
+
+      expect(container.querySelector('img')).toBeNull()
+      expect(container.querySelector('script')).toBeNull()
+      expect(container.innerHTML).not.toContain('onerror')
+      expect((window as unknown as Record<string, unknown>).__pwned).toBeUndefined()
+    })
+
+    it('cleans up a tag left dangling by the backend truncation', () => {
+      renderCard({ ...complete, summary: 'Doors at 19:30. Book at <a href="https://exa' })
+      expect(screen.getByText('Doors at 19:30. Book at')).toBeInTheDocument()
+      expect(screen.queryByText(/href/)).not.toBeInTheDocument()
+    })
+
+    it('omits the paragraph when nothing readable survives', () => {
+      renderCard({ ...complete, summary: '<p></p>' })
+      // Only the venue/date lines remain; no empty summary paragraph.
+      expect(screen.getByRole('listitem').querySelectorAll('p')).toHaveLength(0)
+    })
+  })
+
   it('never renders an image placeholder', () => {
     const { container } = renderCard(complete)
     expect(container.querySelector('img')).toBeNull()

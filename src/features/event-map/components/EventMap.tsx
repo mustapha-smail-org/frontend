@@ -1,5 +1,5 @@
 import { Loader2, LocateFixed, Plus, Minus, TriangleAlert } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import type { Map as LeafletMap } from 'leaflet'
 
@@ -9,13 +9,18 @@ import { Button } from '@/components/ui/button'
 import type { EventMapMarker } from '@/shared/api/types'
 import { describeError } from '@/shared/components/describe-error'
 
+import { useTheme } from '@/shared/theme/use-theme'
+
 import {
+  DARK_TILE_FILTER,
+  hasDedicatedDarkTiles,
   MARKER_FOCUS_ZOOM,
   MAX_ZOOM,
   MIN_ZOOM,
   PARIS_CENTER,
   PARIS_DEFAULT_ZOOM,
   tileConfig,
+  tileUrlFor,
 } from '../map-config'
 import { createMarkerIcon } from './marker-icon'
 import { MarkerPopup } from './MarkerPopup'
@@ -134,6 +139,9 @@ export function EventMap({
   const mapRef = useRef<LeafletMap | null>(null)
   const [tilesFailed, setTilesFailed] = useState(false)
   const tileErrorCount = useRef(0)
+  const { resolved: theme } = useTheme()
+  // A dedicated dark tile set needs no filter; a single shared set does.
+  const needsTileFilter = theme === 'dark' && !hasDedicatedDarkTiles
 
   const recenter = useCallback(() => {
     mapRef.current?.setView(PARIS_CENTER, PARIS_DEFAULT_ZOOM, { animate: true })
@@ -184,7 +192,12 @@ export function EventMap({
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      className="relative h-full w-full"
+      style={
+        needsTileFilter ? ({ '--cp-tile-filter': DARK_TILE_FILTER } as CSSProperties) : undefined
+      }
+    >
       <MapContainer
         center={PARIS_CENTER}
         zoom={PARIS_DEFAULT_ZOOM}
@@ -198,7 +211,10 @@ export function EventMap({
         keyboard={false}
       >
         <TileLayer
-          url={tileConfig.url}
+          // `key` forces a remount so Leaflet drops cached light tiles when the
+          // theme switches to a different tile set.
+          key={theme}
+          url={tileUrlFor(theme)}
           attribution={tileConfig.attribution}
           maxZoom={MAX_ZOOM}
           eventHandlers={{

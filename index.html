@@ -3,7 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      /*
+       * Applies the saved theme before first paint, so a dark-mode user never
+       * sees a white flash while the JS bundle loads. Kept in sync with
+       * src/shared/theme/theme.ts.
+       */
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('citypulse.theme')
+          var dark =
+            stored === 'dark' ||
+            ((stored === 'system' || stored === null) &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.classList.toggle('dark', dark)
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+        } catch (error) {
+          /* Storage blocked: fall back to the light default. */
+        }
+      })()
+    </script>
     <title>CityPulse — Events in Paris</title>
     <meta
       name="description"

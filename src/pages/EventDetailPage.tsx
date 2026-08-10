@@ -1,5 +1,5 @@
-import { ArrowLeft, CalendarDays, MapPin } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { ArrowLeft, CalendarDays, ExternalLink, MapPin } from 'lucide-react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
@@ -9,16 +9,18 @@ import { DetailSkeleton } from '@/features/event-detail/components/DetailSkeleto
 import { EventActions } from '@/features/event-detail/components/EventActions'
 import { EventUnavailable } from '@/features/event-detail/components/EventUnavailable'
 import { OccurrenceList } from '@/features/event-detail/components/OccurrenceList'
-import { PlainTextBlock } from '@/features/event-detail/components/PlainTextBlock'
 import { PricingPanel } from '@/features/event-detail/components/PricingPanel'
 import { useBackToResults } from '@/features/event-detail/hooks/use-back-to-results'
 import { useEventDetail } from '@/features/event-detail/hooks/use-event-detail'
 import { isNotFound } from '@/shared/api/errors'
 import { ErrorState } from '@/shared/components/ErrorState'
+import { RichText } from '@/shared/components/RichText'
+import { htmlToPlainText } from '@/shared/components/sanitize-html'
 import { formatEventDateRange, formatFullDateTime } from '@/shared/formatters/date'
 import { arrondissementBadgeLabel } from '@/shared/formatters/labels'
 import { useDocumentMetadata } from '@/shared/hooks/use-document-metadata'
 import { getCategoryAccent } from '@/shared/utils/category-accent'
+import { buildMapSearchUrl, mapProviderName } from '@/shared/utils/map-links'
 
 function hasValidCoordinates(
   latitude: number | null | undefined,
@@ -40,9 +42,15 @@ export function EventDetailPage() {
   const { data: event, isPending, isError, error, refetch } = useEventDetail(eventId)
   const headingRef = useRef<HTMLHeadingElement>(null)
 
+  // The description may be HTML; a meta description must be plain text.
+  const metaDescription = useMemo(
+    () => (event?.description ? htmlToPlainText(event.description) : null),
+    [event?.description]
+  )
+
   useDocumentMetadata({
     title: event?.title ?? null,
-    description: event?.description ?? null,
+    description: metaDescription,
     canonicalPath: eventId ? `/events/${encodeURIComponent(eventId)}` : null,
   })
 
@@ -80,6 +88,15 @@ export function EventDetailPage() {
   const arrondissement = arrondissementBadgeLabel(location?.arrondissement ?? null)
   const showMiniMap = hasValidCoordinates(location?.latitude, location?.longitude)
 
+  // Shared by the header action and the "Where it is" section.
+  const mapsUrl = buildMapSearchUrl({
+    latitude: location?.latitude ?? null,
+    longitude: location?.longitude ?? null,
+    addressParts: [location?.name, location?.street, location?.zipcode, location?.city],
+    label: location?.name ?? event.title,
+  })
+  const mapsProvider = mapProviderName()
+
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
       <Link
@@ -104,7 +121,7 @@ export function EventDetailPage() {
         <h1
           ref={headingRef}
           tabIndex={-1}
-          className="mt-3 text-2xl leading-tight font-semibold sm:text-3xl"
+          className="route-focus mt-3 text-2xl leading-tight font-semibold sm:text-3xl"
         >
           {event.title}
         </h1>
@@ -158,8 +175,10 @@ export function EventDetailPage() {
           <h2 id="description-heading" className="text-lg font-semibold">
             About this event
           </h2>
-          <PlainTextBlock
-            text={event.description}
+          {/* Upstream descriptions carry HTML; sanitised, never injected raw. */}
+          <RichText
+            content={event.description}
+            data-testid="event-description"
             className="text-foreground/90 mt-3 text-[0.95rem]"
           />
         </section>
@@ -170,18 +189,54 @@ export function EventDetailPage() {
 
         <AccessibilityPanel accessibility={event.accessibility} />
 
-        {showMiniMap && location ? (
+        {/*
+          Rendered whenever the venue is identifiable at all — a postal address
+          without coordinates is still worth a maps link, even with no mini-map.
+        */}
+        {location && (showMiniMap || mapsUrl) ? (
           <section aria-labelledby="location-heading" className="border-border border-t pt-6">
             <h2 id="location-heading" className="text-lg font-semibold">
               Where it is
             </h2>
-            <div className="mt-3">
-              <DetailMiniMap
-                latitude={location.latitude as number}
-                longitude={location.longitude as number}
-                title={event.title}
-              />
+
+            <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <p className="text-muted-foreground min-w-0 text-sm">
+                {[location.name, addressLine].filter(Boolean).join(' · ') || arrondissement}
+              </p>
+
+              {mapsUrl ? (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="location-maps-link"
+                  className="text-primary inline-flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium hover:underline"
+                >
+                  Open in {mapsProvider}
+                  <ExternalLink aria-hidden="true" className="size-3.5 opacity-70" />
+                  <span className="sr-only">(opens in a new tab)</span>
+                </a>
+              ) : null}
             </div>
+
+            {showMiniMap ? (
+              <a
+                href={mapsUrl ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                tabIndex={-1}
+                // The visible link above is the accessible affordance; the map
+                // itself is decorative, so it is skipped in the tab order.
+                aria-hidden="true"
+                className="focus-visible:ring-ring mt-3 block rounded-xl focus-visible:ring-2"
+              >
+                <DetailMiniMap
+                  latitude={location.latitude as number}
+                  longitude={location.longitude as number}
+                  title={event.title}
+                />
+              </a>
+            ) : null}
           </section>
         ) : null}
       </div>

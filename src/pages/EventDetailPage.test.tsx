@@ -65,9 +65,9 @@ describe('EventDetailPage', () => {
     expect(booking).toHaveAttribute('target', '_blank')
 
     expect(screen.getByRole('link', { name: /Official website/ })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Open in Maps/ })).toHaveAttribute(
+    expect(screen.getByTestId('open-in-maps')).toHaveAttribute(
       'href',
-      expect.stringContaining('mlat=48.8631')
+      expect.stringContaining('google.com/maps')
     )
   })
 
@@ -86,8 +86,9 @@ describe('EventDetailPage', () => {
 
     expect(screen.queryByRole('link', { name: /Buy tickets/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Official website/ })).not.toBeInTheDocument()
-    // Coordinates are still valid, so the maps action survives.
-    expect(screen.getByRole('link', { name: /Open in Maps/ })).toBeInTheDocument()
+    // Coordinates are still valid, so both maps affordances survive.
+    expect(screen.getByTestId('open-in-maps')).toBeInTheDocument()
+    expect(screen.getByTestId('location-maps-link')).toBeInTheDocument()
   })
 
   it('lists occurrences in the order supplied by the API', async () => {
@@ -101,6 +102,20 @@ describe('EventDetailPage', () => {
     expect(items[1]).toHaveTextContent('13 September 2026')
   })
 
+  it('makes the "Where it is" section open the configured maps provider', async () => {
+    renderDetail()
+    await screen.findByRole('heading', { level: 1 })
+
+    const section = screen.getByRole('region', { name: /where it is/i })
+    const link = screen.getByTestId('location-maps-link')
+
+    expect(section).toContainElement(link)
+    expect(link).toHaveTextContent('Open in Google Maps')
+    expect(link).toHaveAttribute('href', expect.stringContaining('google.com/maps'))
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(link).toHaveAttribute('target', '_blank')
+  })
+
   it('reports accessibility honestly', async () => {
     renderDetail()
     await screen.findByRole('heading', { level: 1 })
@@ -112,21 +127,70 @@ describe('EventDetailPage', () => {
     expect(within(section).queryByText(/^Not accessible/)).not.toBeInTheDocument()
   })
 
-  it('renders the description as text, never as HTML', async () => {
+  it('renders description HTML safely rather than as raw markup', async () => {
     server.use(
       http.get('*/api/v1/events/:eventId', () =>
         HttpResponse.json({
           ...detailFixture,
-          description: '<img src=x onerror="alert(1)"> <b>bold</b>',
+          description:
+            '<p>An <b>excellent</b> evening.</p><img src=x onerror="alert(1)">' +
+            '<script>alert(2)</script><p>See <a href="https://example.org/x">details</a>.</p>',
         })
       )
     )
     const { container } = renderDetail()
     await screen.findByRole('heading', { level: 1 })
 
-    expect(container.querySelector('img')).toBeNull()
-    expect(container.querySelector('b')).toBeNull()
-    expect(screen.getByText(/<img src=x onerror=/)).toBeInTheDocument()
+    const description = screen.getByTestId('event-description')
+    // Real markup is honoured...
+    expect(description.querySelector('strong')).toHaveTextContent('excellent')
+    expect(description.querySelectorAll('p')).toHaveLength(2)
+    expect(screen.getByRole('link', { name: 'details' })).toHaveAttribute(
+      'href',
+      'https://example.org/x'
+    )
+    // ...while anything executable is removed, not escaped and displayed.
+    // Scoped to the description: the mini-map legitimately renders tile <img>s.
+    expect(description.querySelector('img')).toBeNull()
+    expect(container.querySelector('script')).toBeNull()
+    expect(container.innerHTML).not.toContain('onerror')
+    expect(description.textContent).not.toContain('<img')
+    expect(description.textContent).not.toContain('alert(')
+  })
+
+  it('renders paid price detail HTML safely', async () => {
+    server.use(
+      http.get('*/api/v1/events/:eventId', () =>
+        HttpResponse.json({
+          ...detailFixture,
+          pricing: {
+            ...detailFixture.pricing,
+            detail: '<p>Full price <strong>€28</strong></p><script>alert(1)</script>',
+          },
+        })
+      )
+    )
+    const { container } = renderDetail()
+    await screen.findByRole('heading', { level: 1 })
+
+    const pricing = screen.getByTestId('pricing-detail')
+    expect(pricing.querySelector('strong')).toHaveTextContent('€28')
+    expect(container.querySelector('script')).toBeNull()
+    expect(pricing.textContent).not.toContain('alert(')
+  })
+
+  it('uses a plain-text meta description even when the source is HTML', async () => {
+    server.use(
+      http.get('*/api/v1/events/:eventId', () =>
+        HttpResponse.json({ ...detailFixture, description: '<p>Jazz  <b>trio</b> night</p>' })
+      )
+    )
+    renderDetail()
+    await screen.findByRole('heading', { level: 1 })
+
+    const meta = document.querySelector('meta[name="description"]')?.getAttribute('content')
+    expect(meta).toBe('Jazz trio night')
+    expect(meta).not.toContain('<')
   })
 
   describe('with missing data', () => {
@@ -148,16 +212,43 @@ describe('EventDetailPage', () => {
       expect(screen.queryByRole('region', { name: /occurrence/i })).not.toBeInTheDocument()
     })
 
-    it('omits the mini-map when coordinates are absent', async () => {
+    it('omits the whole location section when there is nothing to point at', async () => {
       renderDetail('evt-sparse')
       await screen.findByRole('heading', { level: 1 })
       expect(screen.queryByRole('region', { name: /where it is/i })).not.toBeInTheDocument()
+      expect(screen.queryByTestId('location-maps-link')).not.toBeInTheDocument()
+    })
+
+    it('still offers a maps link when only an address is known', async () => {
+      server.use(
+        http.get('*/api/v1/events/:eventId', () =>
+          HttpResponse.json({
+            ...detailFixture,
+            location: {
+              name: 'Salle Pleyel',
+              street: '252 Rue du Faubourg Saint-Honoré',
+              zipcode: '75008',
+              city: 'Paris',
+              arrondissement: 8,
+              latitude: null,
+              longitude: null,
+            },
+          })
+        )
+      )
+      renderDetail()
+      await screen.findByRole('heading', { level: 1 })
+
+      const link = screen.getByTestId('location-maps-link')
+      expect(link).toHaveAttribute('href', expect.stringContaining('Salle%20Pleyel'))
+      // No coordinates means no mini-map, but the section still exists.
+      expect(screen.queryByTestId('detail-mini-map')).not.toBeInTheDocument()
     })
 
     it('renders no external actions at all when nothing is linkable', async () => {
       renderDetail('evt-sparse')
       await screen.findByRole('heading', { level: 1 })
-      expect(screen.queryByRole('link', { name: /Open in Maps/ })).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: /Open in Google Maps/ })).not.toBeInTheDocument()
       expect(screen.queryByRole('link', { name: /Book/ })).not.toBeInTheDocument()
     })
   })

@@ -48,7 +48,9 @@ elsewhere with `VITE_DEV_API_PROXY_TARGET`.
 | `VITE_API_BASE_URL`         | In production | Base URL of the API Gateway. Empty or `/` means same origin, which is what the dev proxy relies on |
 | `VITE_DEV_API_PROXY_TARGET` | No            | Dev-only proxy target. Defaults to `http://localhost:8081`                                         |
 | `VITE_MAP_TILE_URL`         | Yes           | Tile template; must contain `{z}`, `{x}`, `{y}`                                                    |
+| `VITE_MAP_TILE_URL_DARK`    | No            | Dark-theme tile template. Omit to reuse the light tiles with a CSS inversion filter                |
 | `VITE_MAP_ATTRIBUTION`      | Yes           | Attribution string rendered on the map                                                             |
+| `VITE_MAP_LINK_PROVIDER`    | No            | Where "Open in Maps" points: `google` (default), `apple`, `openstreetmap`, `bing`                  |
 
 Configuration is validated at startup (`src/shared/config/env.ts`). Outside
 production an invalid configuration throws a developer-readable error; in
@@ -93,7 +95,7 @@ Redux and no Zustand.
 ### Key invariants
 
 - **URL is truth.** Any filtered search is reproducible by copying the address
-  bar. Cursors, marker selection and sheet state never appear in the URL.
+  bar. Cursors, marker selection, theme and sheet state never appear in the URL.
 - **List and map are independently paginated** but always receive the same
   semantic filter object. Loading more cards never advances the map cursor.
 - **The map never auto-crawls.** Marker pages advance only on an explicit
@@ -102,9 +104,72 @@ Redux and no Zustand.
 - **Missing data is stated, never guessed.** "Price not specified" is never
   rendered as "Free"; absent accessibility data is never rendered as
   "not accessible".
-- **External text is plain text.** `dangerouslySetInnerHTML` is banned by an
-  ESLint rule; external URLs are protocol-checked before becoming links.
+- **External HTML is sanitised, never injected.** `dangerouslySetInnerHTML` is
+  banned by an ESLint rule; see [Rich text](#rich-text-from-the-catalog) below.
+- **External URLs are protocol-checked** before they can become links.
 - **`fetch` is confined to `src/shared/api/`**, also enforced by ESLint.
+
+### Theming
+
+Every colour in the app resolves through CSS custom properties in
+`src/styles/globals.css`, so the `.dark` block there _is_ the dark theme — no
+component carries a per-theme branch.
+
+The header has a two-position switch, but the stored preference has **three**
+states. Until the user touches the switch, the preference stays `system` and the
+switch simply mirrors the OS — so a visitor on a dark desktop lands in dark mode
+with no configuration, and keeps following the OS if it changes later. Flipping
+the switch pins `light` or `dark` from then on. The choice lives in
+`localStorage` and is deliberately not in the URL, so a shared link never forces
+a theme on the recipient.
+
+An inline script in `index.html` applies the saved theme before first paint to
+avoid a white flash. It duplicates a few lines of `src/shared/theme/theme.ts` on
+purpose — it must run before any module loads. Keep the two in sync.
+
+For the map, set `VITE_MAP_TILE_URL_DARK` to a real dark tile set. Without it,
+dark mode applies a CSS inversion filter to the light tiles: legible, but visibly
+a filter.
+
+> **Editing Leaflet styles?** `leaflet/dist/leaflet.css` is imported inside the
+> lazily loaded map chunk, so it lands in the document _after_ `globals.css` and
+> its single-class rules win on source order. Every Leaflet override in
+> `globals.css` therefore doubles its class name
+> (`.leaflet-popup-content-wrapper.leaflet-popup-content-wrapper`) to outrank it.
+> Do not "simplify" those selectors — the popup silently reverts to Leaflet's
+> white background, which is unreadable in dark mode. `@layer` cannot help here:
+> Leaflet's CSS is unlayered, and unlayered rules beat layered ones.
+
+### Rich text from the Catalog
+
+Event descriptions, list summaries and paid price details all arrive as HTML
+from upstream open data. `src/shared/components/sanitize-html.ts` parses that
+into an inert document, walks it, and emits an allowlisted node tree that
+`src/shared/components/RichText.tsx` renders as ordinary React elements.
+
+Two entry points, because the contexts differ:
+
+- **`RichText`** — detail page description and price detail. Keeps structure.
+- **`htmlToPlainSummary`** — discovery list cards. Flattens to text. Cards clamp
+  to two lines, and block-level markup both breaks the clamp and adds nothing at
+  that size. This path also repairs the backend's truncation: `summarize()` cuts
+  the description at 237 characters with no awareness of markup, so a summary can
+  end mid-tag (`… book at <a href="htt`) or mid-entity (`Caf&eac`).
+
+- `dangerouslySetInnerHTML` is never used, so the ESLint ban stays in force.
+- Only `p`, `br`, `strong`/`b`, `em`/`i`, `u`, `ul`/`ol`/`li`, `a`, `h3`–`h6`,
+  `blockquote` and `hr` survive. Unknown tags are unwrapped, keeping their text.
+- `script`, `style`, `iframe`, `object`, `form`, `svg` and friends are dropped
+  **with their content**.
+- The only attribute that survives is `href` on `<a>`, after protocol
+  validation. No source attribute is ever copied through, so `onerror`,
+  `style`, `srcdoc` and similar cannot appear.
+- Imported `h1`/`h2` are demoted to `h3` so they cannot outrank the page title.
+- Content with no markup falls back to paragraph/line-break reconstruction.
+
+`src/shared/components/RichText.test.tsx` runs a table of injection attempts
+against this; `e2e/discovery.spec.ts` repeats the check in a real browser and
+asserts no script executed.
 
 ---
 
@@ -145,9 +210,19 @@ trigger on sheet close, and `prefers-reduced-motion` support.
 The list is the canonical accessible alternative to the map; no information or
 action exists only inside a marker popup.
 
-One upstream accessibility bug was found and fixed during implementation — Vaul's
-drawer does not move focus into itself by default, which let Tab escape to the
-page behind the open filter sheet. See `docs/ui-component-sources.md`.
+The header carries a **"Skip to results"** link. It is the WCAG 2.2 SC 2.4.1
+"Bypass Blocks" affordance: a keyboard or screen-reader user pressing Tab on
+arrival gets to jump straight past the header and filter bar to the results,
+instead of tabbing through every control first. It is invisible until it
+receives focus (`.skip-link` in `globals.css`) and costs nothing to anyone else.
+
+Two accessibility bugs were found and fixed during implementation:
+
+- Vaul's drawer does not move focus into itself by default, which let Tab escape
+  to the page behind the open filter sheet. See `docs/ui-component-sources.md`.
+- The skip link's hiding utility had been dropped in a refactor, leaving it
+  permanently visible. It is now hidden until focused, and
+  `e2e/theme.spec.ts` asserts both states.
 
 **Not yet done:** a manual screen-reader pass (VoiceOver/NVDA) and an automated
 axe audit. Keyboard flows are covered by Playwright.

@@ -12,7 +12,7 @@ export function EventUnavailable({ backTo }: { backTo: string }) {
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-16 text-center sm:px-6">
       <CalendarX2 aria-hidden="true" className="text-muted-foreground mx-auto size-8" />
-      <h1 className="mt-4 text-2xl font-semibold" tabIndex={-1}>
+      <h1 className="route-focus mt-4 text-2xl font-semibold" tabIndex={-1}>
         Event unavailable
       </h1>
       <p className="text-muted-foreground mt-2">

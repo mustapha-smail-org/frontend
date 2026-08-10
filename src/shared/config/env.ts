@@ -6,11 +6,23 @@
  * app falls back to safe defaults rather than white-screening, and logs once.
  */
 
+/**
+ * Which external mapping service the "Open in Maps" actions link to.
+ * Deliberately configurable rather than hardcoded (see `map-links.ts`).
+ */
+export const MAP_LINK_PROVIDERS = ['google', 'apple', 'openstreetmap', 'bing'] as const
+export type MapLinkProvider = (typeof MAP_LINK_PROVIDERS)[number]
+
+export const DEFAULT_MAP_LINK_PROVIDER: MapLinkProvider = 'google'
+
 export interface AppConfig {
   /** Base URL of the API Gateway. Always normalised without a trailing slash. */
   apiBaseUrl: string
   mapTileUrl: string
+  /** Optional dark tile set. Falls back to `mapTileUrl` when not supplied. */
+  mapTileUrlDark: string
   mapAttribution: string
+  mapLinkProvider: MapLinkProvider
 }
 
 export class ConfigurationError extends Error {
@@ -33,6 +45,10 @@ const FALLBACKS = {
   mapAttribution:
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 } as const
+
+function isMapLinkProvider(value: string): value is MapLinkProvider {
+  return (MAP_LINK_PROVIDERS as readonly string[]).includes(value)
+}
 
 function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
@@ -67,10 +83,32 @@ export function resolveConfig(
     missing.push('VITE_MAP_ATTRIBUTION')
   }
 
+  // Optional: a deployment with only one tile set simply omits this.
+  const rawDarkTileUrl = readString(source.VITE_MAP_TILE_URL_DARK)
+  const darkTileUrlIsUsable =
+    rawDarkTileUrl.includes('{z}') &&
+    rawDarkTileUrl.includes('{x}') &&
+    rawDarkTileUrl.includes('{y}')
+
+  /*
+   * An unrecognised provider is a typo, not a reason to break the page: warn in
+   * the configuration error and fall back to the default.
+   */
+  const rawLinkProvider = readString(source.VITE_MAP_LINK_PROVIDER).toLowerCase()
+  if (rawLinkProvider !== '' && !isMapLinkProvider(rawLinkProvider)) {
+    missing.push('VITE_MAP_LINK_PROVIDER')
+  }
+
+  const effectiveTileUrl = missing.includes('VITE_MAP_TILE_URL') ? FALLBACKS.mapTileUrl : mapTileUrl
+
   const config: AppConfig = {
     apiBaseUrl: normaliseBaseUrl(rawApiBaseUrl || FALLBACKS.apiBaseUrl),
-    mapTileUrl: missing.includes('VITE_MAP_TILE_URL') ? FALLBACKS.mapTileUrl : mapTileUrl,
+    mapTileUrl: effectiveTileUrl,
+    mapTileUrlDark: darkTileUrlIsUsable ? rawDarkTileUrl : effectiveTileUrl,
     mapAttribution: mapAttribution || FALLBACKS.mapAttribution,
+    mapLinkProvider: isMapLinkProvider(rawLinkProvider)
+      ? rawLinkProvider
+      : DEFAULT_MAP_LINK_PROVIDER,
   }
 
   return { config, error: missing.length > 0 ? new ConfigurationError(missing) : null }

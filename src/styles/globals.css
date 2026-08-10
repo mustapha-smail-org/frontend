@@ -10,8 +10,13 @@
  * layer required by PRD 7.2 rule 7: the shadcn contract is re-pointed at
  * CityPulse values, and CityPulse-specific tokens are added alongside it.
  *
- * Dark mode is deliberately out of scope for the MVP.
+ * Both themes are defined here. Because every colour in the app resolves
+ * through these tokens, dark mode needs no per-component work: the `.dark`
+ * block below is the entire theme.
  */
+
+/* Tailwind v4: opt into class-based dark variants driven by `.dark` on <html>. */
+@custom-variant dark (&:is(.dark *));
 
 :root {
   --radius: 0.625rem;
@@ -79,6 +84,79 @@
   --category-e-subtle: oklch(0.96 0.025 20);
   --category-f: oklch(0.43 0.12 255);
   --category-f-subtle: oklch(0.955 0.028 255);
+
+  /* Tells the browser which UA widget palette to use (scrollbars, form controls). */
+  color-scheme: light;
+}
+
+/*
+ * Dark theme.
+ *
+ * Not a mechanical inversion. Two rules drive the values:
+ *  1. Surfaces are lifted rather than the text being dimmed — pure black causes
+ *     halation against light text, so the background sits at L≈0.17.
+ *  2. Accent chroma is reduced and lightness raised, because a colour that
+ *     reads as "saturated" on white becomes glaring on a dark surface.
+ * All foreground/background pairings keep WCAG AA contrast.
+ */
+.dark {
+  --background: oklch(0.17 0.008 265);
+  --foreground: oklch(0.94 0.004 265);
+  --card: oklch(0.213 0.009 265);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.225 0.009 265);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.68 0.15 264);
+  --primary-foreground: oklch(0.16 0.02 265);
+
+  --secondary: oklch(0.27 0.01 265);
+  --secondary-foreground: oklch(0.93 0.005 265);
+
+  --muted: oklch(0.26 0.01 265);
+  --muted-foreground: oklch(0.72 0.014 265); /* AA on --background */
+
+  --accent: oklch(0.3 0.025 264);
+  --accent-foreground: oklch(0.92 0.02 264);
+
+  --destructive: oklch(0.68 0.17 25);
+  --destructive-foreground: oklch(0.16 0.02 265);
+
+  --border: oklch(0.3 0.01 265);
+  --input: oklch(0.33 0.011 265);
+  --ring: oklch(0.68 0.15 264);
+
+  --free: oklch(0.78 0.14 155);
+  --free-subtle: oklch(0.28 0.05 155);
+  --free-border: oklch(0.38 0.07 155);
+
+  --paid: oklch(0.79 0.11 264);
+  --paid-subtle: oklch(0.28 0.04 264);
+  --paid-border: oklch(0.38 0.06 264);
+
+  --unspecified: oklch(0.82 0.1 85);
+  --unspecified-subtle: oklch(0.29 0.04 85);
+  --unspecified-border: oklch(0.39 0.055 85);
+
+  --warning: oklch(0.83 0.12 80);
+  --warning-subtle: oklch(0.29 0.045 80);
+
+  --category-neutral: oklch(0.8 0.012 265);
+  --category-neutral-subtle: oklch(0.27 0.008 265);
+  --category-a: oklch(0.8 0.13 300);
+  --category-a-subtle: oklch(0.29 0.05 300);
+  --category-b: oklch(0.8 0.1 220);
+  --category-b-subtle: oklch(0.28 0.045 220);
+  --category-c: oklch(0.8 0.11 150);
+  --category-c-subtle: oklch(0.28 0.045 150);
+  --category-d: oklch(0.82 0.11 65);
+  --category-d-subtle: oklch(0.29 0.045 65);
+  --category-e: oklch(0.8 0.13 20);
+  --category-e-subtle: oklch(0.29 0.05 20);
+  --category-f: oklch(0.79 0.11 255);
+  --category-f-subtle: oklch(0.28 0.045 255);
+
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -163,6 +241,58 @@
   }
 }
 
+@layer utilities {
+  /*
+   * Route-change focus target (PRD 13.1).
+   *
+   * These headings carry tabIndex={-1} and are focused programmatically after a
+   * navigation so screen readers announce the new page. They can never be
+   * reached by Tab, so suppressing the ring cannot hide a focus indicator from
+   * anyone — it only avoids drawing a box around the title for every visitor.
+   */
+  .route-focus:focus,
+  .route-focus:focus-visible {
+    outline: none;
+  }
+
+  /*
+   * Skip link (WCAG 2.2 SC 2.4.1 "Bypass Blocks").
+   *
+   * Visually hidden but still in the tab order and still announced, so the
+   * first Tab on any page offers a jump past the header straight to the
+   * results. It becomes visible only while focused — which is the entire
+   * point: sighted keyboard users must be able to see where focus is.
+   */
+  .skip-link {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 100;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+  }
+
+  .skip-link:focus-visible {
+    width: auto;
+    height: auto;
+    padding: 0.5rem 0.875rem;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: 0 6px 20px -6px oklch(0 0 0 / 0.35);
+  }
+}
+
 /* PRD 7.7 / 13.4: honour the OS reduced-motion preference. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -175,36 +305,96 @@
   }
 }
 
-/* --- Leaflet integration -------------------------------------------------- */
+/* --- Leaflet integration --------------------------------------------------
+ *
+ * IMPORTANT — specificity, not preference.
+ *
+ * `leaflet/dist/leaflet.css` is imported inside the lazily loaded map chunk, so
+ * it is appended to the document AFTER this stylesheet. Leaflet styles its own
+ * surfaces with single-class selectors (`.leaflet-container { background: #ddd }`,
+ * `.leaflet-popup-content-wrapper { background: white; color: #333 }`, …), which
+ * therefore beat equally specific rules here purely on source order.
+ *
+ * In light mode that was invisible, because Leaflet's values happened to match.
+ * In dark mode it produced a white popup with white text.
+ *
+ * Every override below doubles its class name to raise specificity above
+ * Leaflet's. Do not "simplify" these selectors. `@layer` cannot help: Leaflet's
+ * CSS is unlayered, and unlayered rules outrank layered ones.
+ */
 
-.leaflet-container {
+.leaflet-container.leaflet-container {
   font-family: var(--font-sans);
   background-color: var(--color-muted);
   z-index: 0;
 }
 
-.leaflet-container a {
+.leaflet-container.leaflet-container a {
   color: var(--color-primary);
 }
 
-.leaflet-control-attribution {
-  font-size: 0.6875rem;
-}
-
-.leaflet-popup-content-wrapper {
+.leaflet-popup-content-wrapper.leaflet-popup-content-wrapper,
+.leaflet-popup-tip.leaflet-popup-tip {
   padding: 0;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 28px -8px oklch(0.22 0.012 265 / 0.25);
+  background-color: var(--color-popover);
+  color: var(--color-popover-foreground);
 }
 
-.leaflet-popup-content {
+.leaflet-popup-content-wrapper.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 28px -8px oklch(0 0 0 / 0.35);
+}
+
+.leaflet-popup-content.leaflet-popup-content {
   margin: 0;
   width: 16rem !important;
 }
 
-.leaflet-popup-close-button {
+.leaflet-popup-close-button.leaflet-popup-close-button {
   padding: 0.5rem 0.5rem 0 0 !important;
   z-index: 1;
+  color: var(--color-muted-foreground);
+}
+
+.leaflet-popup-close-button.leaflet-popup-close-button:hover {
+  color: var(--color-foreground);
+}
+
+/* Zoom / recentre controls and the attribution strip. */
+.leaflet-bar.leaflet-bar a,
+.leaflet-control-attribution.leaflet-control-attribution {
+  background-color: var(--color-card);
+  color: var(--color-muted-foreground);
+}
+
+.leaflet-bar.leaflet-bar a:hover,
+.leaflet-bar.leaflet-bar a:focus {
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+.leaflet-bar.leaflet-bar {
+  border-color: var(--color-border);
+}
+
+.leaflet-control-attribution.leaflet-control-attribution {
+  font-size: 0.6875rem;
+}
+
+.leaflet-control-attribution.leaflet-control-attribution a {
+  color: var(--color-primary);
+}
+
+/*
+ * Dark tiles.
+ *
+ * Preferred route is a real dark tile set via VITE_MAP_TILE_URL_DARK. When the
+ * deployment ships only one tile URL, this filter keeps the map legible instead
+ * of leaving a blazing white rectangle in a dark page. It applies to the tile
+ * pane only, so markers, popups and controls keep their true colours.
+ */
+.dark .leaflet-tile-pane {
+  filter: var(--cp-tile-filter, none);
 }
 
 .cp-marker {

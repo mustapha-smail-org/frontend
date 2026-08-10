@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { EventSummary } from '@/shared/api/types'
+import { htmlToPlainSummary } from '@/shared/components/sanitize-html'
 import { formatEventDateRange } from '@/shared/formatters/date'
 import {
   arrondissementBadgeLabel,
@@ -36,6 +37,12 @@ export const EventCard = forwardRef<HTMLLIElement, EventCardProps>(function Even
   const location = useLocation()
   const dates = useMemo(() => formatEventDateRange(event.startAt, event.endAt), [event])
   const arrondissement = arrondissementBadgeLabel(event.arrondissement)
+  /*
+   * Summaries arrive as truncated HTML. Cards clamp to two lines, so block-level
+   * markup would break the clamp and add nothing at this size — the summary is
+   * flattened to text here, and the detail page renders the full rich version.
+   */
+  const summary = useMemo(() => htmlToPlainSummary(event.summary), [event.summary])
   const visibleCategories = event.categories.slice(0, MAX_VISIBLE_CATEGORIES)
   const hiddenCategoryCount = event.categories.length - visibleCategories.length
 
@@ -93,8 +100,8 @@ export const EventCard = forwardRef<HTMLLIElement, EventCardProps>(function Even
           </Link>
         </h3>
 
-        {event.summary ? (
-          <p className="text-muted-foreground mt-1.5 line-clamp-2 text-sm">{event.summary}</p>
+        {summary !== '' ? (
+          <p className="text-muted-foreground mt-1.5 line-clamp-2 text-sm">{summary}</p>
         ) : null}
 
         <dl className="text-muted-foreground mt-3 space-y-1 text-sm">

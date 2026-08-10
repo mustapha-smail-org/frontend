@@ -2,7 +2,8 @@ import { ExternalLink, Globe, Map as MapIcon, Ticket } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { EventDetail } from '@/shared/api/types'
-import { buildMapSearchUrl, safeExternalUrl } from '@/shared/utils/safe-url'
+import { buildMapSearchUrl, mapProviderName } from '@/shared/utils/map-links'
+import { safeExternalUrl } from '@/shared/utils/safe-url'
 
 /**
  * PRD FR-DETAIL-003.
@@ -28,6 +29,7 @@ export function EventActions({ event }: { event: EventDetail }) {
       event.location?.zipcode,
       event.location?.city,
     ],
+    label: event.location?.name ?? event.title,
   })
 
   if (!bookingUrl && !officialUrl && !mapsUrl) return null
@@ -58,9 +60,10 @@ export function EventActions({ event }: { event: EventDetail }) {
 
       {mapsUrl ? (
         <Button asChild variant="outline" className="h-11">
-          <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" data-testid="open-in-maps">
             <MapIcon aria-hidden="true" className="size-4" />
-            Open in Maps
+            {/* Names the destination so the user knows where they are going. */}
+            Open in {mapProviderName()}
             <ExternalLink aria-hidden="true" className="size-3.5 opacity-70" />
             <span className="sr-only">(opens in a new tab)</span>
           </a>
