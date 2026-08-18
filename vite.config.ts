@@ -8,11 +8,12 @@ import { defineConfig, loadEnv } from 'vite'
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
 /**
- * The Catalog Service exposes no CORS configuration and this repository ships no
- * API Gateway yet, so local development proxies `/api` to the service directly.
- * `VITE_DEV_API_PROXY_TARGET` overrides the target once a gateway exists.
+ * Local development proxies `/api` to the API Gateway (default dev port 8080),
+ *
+ * Set `VITE_DEV_API_PROXY_TARGET=http://localhost:8081` to bypass the gateway and
+ * hit the Catalog Service directly when debugging it in isolation.
  */
-const DEFAULT_DEV_PROXY_TARGET = 'http://localhost:8081'
+const DEFAULT_DEV_PROXY_TARGET = 'http://localhost:8080'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, rootDir, '')
