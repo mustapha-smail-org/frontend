@@ -1,0 +1,24 @@
+name: Main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: mustapha-smail-org/deployment-workflows/.github/workflows/ci-main-node.yml@main
+    with:
+      service-name: frontend
+      node-version: '22'
+      sonar-project-key: mustapha-smail-org_frontend
+      sonar-project-name: 'CityPulse Frontend'
+      sonar-organization: mustapha-smail-org
+      coverage-threshold: '85'
+      automation-app-id: ${{ vars.AUTOMATION_APP_ID }}
+    secrets:
+      sonar-token: ${{ secrets.SONAR_TOKEN }}
+      automation-app-private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}

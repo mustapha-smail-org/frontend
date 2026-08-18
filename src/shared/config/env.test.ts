@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveConfig } from './env'
+import { mergeRuntimeConfig, resolveConfig } from './env'
 
 const VALID = {
   VITE_API_BASE_URL: 'https://gateway.example.org',
@@ -53,5 +53,29 @@ describe('resolveConfig', () => {
     const { error } = resolveConfig({}, true)
     expect(error?.message).toContain('.env.example')
     expect(error?.message).toContain('VITE_API_BASE_URL')
+  })
+})
+
+describe('mergeRuntimeConfig', () => {
+  it('prefers a runtime value over the build-time fallback', () => {
+    const merged = mergeRuntimeConfig(
+      { VITE_API_BASE_URL: 'https://build-time.example.org' },
+      { VITE_API_BASE_URL: 'https://runtime.example.org' }
+    )
+    expect(merged.VITE_API_BASE_URL).toBe('https://runtime.example.org')
+  })
+
+  it('falls back to the build-time value for keys runtime config omits', () => {
+    const merged = mergeRuntimeConfig(
+      { VITE_API_BASE_URL: 'https://build-time.example.org' },
+      { VITE_MAP_LINK_PROVIDER: 'apple' }
+    )
+    expect(merged.VITE_API_BASE_URL).toBe('https://build-time.example.org')
+    expect(merged.VITE_MAP_LINK_PROVIDER).toBe('apple')
+  })
+
+  it('is a no-op when runtime config is absent, e.g. dev/test', () => {
+    const buildTimeEnv = { VITE_API_BASE_URL: 'https://build-time.example.org' }
+    expect(mergeRuntimeConfig(buildTimeEnv, undefined)).toEqual(buildTimeEnv)
   })
 })

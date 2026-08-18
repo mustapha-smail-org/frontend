@@ -114,8 +114,24 @@ export function resolveConfig(
   return { config, error: missing.length > 0 ? new ConfigurationError(missing) : null }
 }
 
+/**
+ * Merges runtime config (from `window.__APP_CONFIG__`, injected by the
+ * container entrypoint at deploy time) over build-time `import.meta.env`
+ * fallbacks. Runtime wins so a single built image can be promoted through
+ * every environment without a rebuild — see frontend-cd/README.md.
+ */
+export function mergeRuntimeConfig(
+  buildTimeEnv: Record<string, unknown>,
+  runtimeConfig: Record<string, unknown> | undefined
+): Record<string, unknown> {
+  return { ...buildTimeEnv, ...runtimeConfig }
+}
+
 const resolved = resolveConfig(
-  import.meta.env as unknown as Record<string, unknown>,
+  mergeRuntimeConfig(
+    import.meta.env as unknown as Record<string, unknown>,
+    globalThis.window?.__APP_CONFIG__
+  ),
   import.meta.env.PROD
 )
 

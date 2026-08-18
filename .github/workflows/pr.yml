@@ -1,0 +1,19 @@
+name: PR
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    permissions:
+      contents: read
+    uses: mustapha-smail-org/deployment-workflows/.github/workflows/ci-pr-node.yml@main
+    with:
+      node-version: '22'
+      sonar-project-key: mustapha-smail-org_frontend
+      sonar-project-name: 'CityPulse Frontend'
+      sonar-organization: mustapha-smail-org
+      coverage-threshold: '85'
+    secrets:
+      sonar-token: ${{ secrets.SONAR_TOKEN }}

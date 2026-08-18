@@ -22,7 +22,10 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
+      // 'lcov' feeds sonar-analysis-node (coverage/lcov.info); 'json-summary'
+      // feeds node-verify's own threshold check (coverage/coverage-summary.json).
+      // See deployment-workflows/docs/TEMPLATE_GUIDE.md §3b.
+      reporter: ['text', 'html', 'lcov', 'json-summary'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/**/*.{test,spec}.{ts,tsx}',
