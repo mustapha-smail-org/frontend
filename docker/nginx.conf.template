@@ -1,0 +1,94 @@
+server {
+    listen ${PORT};
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_vary on;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css application/json application/javascript text/javascript application/wasm image/svg+xml;
+
+    # nginx only inherits add_header directives from an outer block into a
+    # location that defines *zero* add_header directives of its own — a
+    # location with even one add_header of its own (e.g. a Cache-Control
+    # override below) silently drops these three instead of adding to them.
+    # So every location below that sets its own add_header repeats this trio
+    # rather than relying on inheritance. Verified with `curl -I` against a
+    # running container — this bit in an earlier draft.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+        return 200 "ok";
+    }
+
+    # Same-origin API proxy: the gateway needs no CORS configuration and
+    # cookies/SameSite behave normally. proxy_pass has no URI part (no
+    # trailing path after ${API_GATEWAY_URL}), so nginx forwards the request
+    # URI unchanged — /api/v1/events reaches the gateway as /api/v1/events,
+    # matching vite.config.ts's dev proxy, which does the same (no rewrite).
+    #
+    # ${API_GATEWAY_URL} is resolved to a literal string by envsubst at
+    # container start (see docker/entrypoint.sh), not an nginx runtime
+    # variable, so no `resolver` directive is needed — nginx resolves the
+    # literal upstream hostname once, like any static proxy_pass target.
+    location /api/ {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+        proxy_pass ${API_GATEWAY_URL};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Vite content-hashes everything under assets/ — safe to cache forever.
+    location /assets/ {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+
+        try_files $uri =404;
+    }
+
+    # Never cache the entrypoint document or the runtime config script: a
+    # stale index.html would reference assets from a previous deploy, and a
+    # stale config.js would keep serving the previous environment's runtime
+    # config after a redeploy.
+    location = /index.html {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Cache-Control "no-store" always;
+    }
+
+    location = /config.js {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Cache-Control "no-store" always;
+    }
+
+    # SPA fallback: any other path (client-side route) serves index.html.
+    # nginx's `index` directive internally redirects a directory-like request
+    # (e.g. `/`) to `/index.html` and re-runs location matching, so most such
+    # requests actually end up served by the `location = /index.html` block
+    # above, not this one.
+    location / {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+        try_files $uri $uri/ /index.html;
+    }
+}

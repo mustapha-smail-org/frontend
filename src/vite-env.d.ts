@@ -12,3 +12,14 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/**
+ * Injected by the container entrypoint (see docker/entrypoint.sh) into
+ * public/config.js, which index.html loads before the app bundle. Absent in
+ * dev/test, where the checked-in public/config.js stub sets it to `{}` and
+ * build-time `import.meta.env` fallbacks apply instead. See
+ * src/shared/config/env.ts and frontend-cd/README.md.
+ */
+interface Window {
+  __APP_CONFIG__?: Record<string, string>
+}

@@ -60,6 +60,80 @@ production it logs and falls back rather than white-screening.
 > endpoint, which is **not** a production CDN. Replace both map variables with a
 > provider you are entitled to use (PRD FR-MAP-006).
 
+**These `VITE_*` variables are build-time dev fallbacks only.** In a deployed
+image they're overridden at container start by runtime config — see
+[Deployment](#deployment) below.
+
+---
+
+## Deployment
+
+CI/CD is provided by [`deployment-workflows`](https://github.com/mustapha-smail-org/deployment-workflows)'s
+Node templates (`ci-pr-node.yml`/`ci-main-node.yml`/`ci-release.yml`), wired up
+in `.github/workflows/{pr,main,release}.yml`. Desired state per environment
+lives in [`frontend-cd`](https://github.com/mustapha-smail-org/frontend-cd).
+See `deployment-workflows/docs/TEMPLATE_GUIDE.md` §1b/§2b for the general
+pattern this follows.
+
+### Runtime configuration, not build-time `VITE_*` baking
+
+A typical Vite deploy bakes `VITE_*` env vars into the JS bundle at build
+time. This repo deliberately does not: that would mean building a separate
+image per environment, breaking this org's "build once, promote the same
+immutable digest through every environment" model (the same reason
+`ci-release.yml` never rebuilds — see `deployment-workflows/README.md`).
+
+Instead:
+
+1. `Dockerfile` builds a static `dist/` and serves it from `nginx:1.27-alpine`.
+2. `docker/entrypoint.sh` runs at container start, reading a JSON file
+   `frontend-cd`'s `deploy.yml` mounts at `/etc/secrets/app-config.json`
+   before every deploy:
+   - `API_GATEWAY_URL` is substituted into `docker/nginx.conf.template`'s
+     `proxy_pass` target (`/api/*` → same-origin proxy to the gateway) and
+     never reaches the browser.
+   - Every other key is written verbatim into `window.__APP_CONFIG__` in
+     `public/config.js`, which `index.html` loads before the app bundle.
+3. `src/shared/config/env.ts`'s `mergeRuntimeConfig` merges
+   `window.__APP_CONFIG__` **over** `import.meta.env` — runtime wins,
+   `.env`/`.env.example` values are the dev-only fallback.
+4. A missing or malformed `/etc/secrets/app-config.json` makes the container
+   fail to start rather than silently falling back — in production, that
+   fallback would be the public OpenStreetMap tile endpoint the PRD
+   (`FR-MAP-006`) explicitly forbids.
+
+See `frontend-cd/README.md` for the config file's exact shape and how it gets
+pushed to Render.
+
+### Building and testing the image locally
+
+```bash
+docker build -t citypulse-frontend .
+```
+
+The image refuses to start without a mounted config file — provide one to
+run it locally:
+
+```bash
+cat > /tmp/app-config.json <<'EOF'
+{
+  "API_GATEWAY_URL": "http://host.docker.internal:8080",
+  "VITE_API_BASE_URL": "/",
+  "VITE_MAP_TILE_URL": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  "VITE_MAP_ATTRIBUTION": "&copy; OpenStreetMap contributors",
+  "VITE_MAP_LINK_PROVIDER": "google"
+}
+EOF
+
+docker run --rm -p 8080:8080 \
+  -v /tmp/app-config.json:/etc/secrets/app-config.json:ro \
+  citypulse-frontend
+```
+
+Then `curl http://localhost:8080/healthz` (expects `ok`) and
+`curl http://localhost:8080/config.js` (expects the JSON above, minus
+`API_GATEWAY_URL`, assigned to `window.__APP_CONFIG__`).
+
 ---
 
 ## Architecture
@@ -235,9 +309,11 @@ axe audit. Keyboard flows are covered by Playwright.
   the static `index.html` metadata rather than per-event titles (PRD
   FR-DETAIL-009 accepts this for MVP). Document title, description and canonical
   link are still set client-side. SSR or prerendering would be needed to fix it.
-- **The Catalog Service has no CORS configuration and this repository has no API
-  Gateway.** See [`docs/api-contract-notes.md`](./docs/api-contract-notes.md)
-  §3 before deploying.
+- **The Catalog Service has no CORS configuration.** In the deployed image
+  this is moot for the SPA itself — `docker/nginx.conf.template` proxies
+  `/api/` same-origin, same as the local dev proxy — but any other direct
+  browser client of the Catalog Service still needs this addressed. See
+  [`docs/api-contract-notes.md`](./docs/api-contract-notes.md) §3.
 - **The OpenAPI contract is still inaccurate** in the ways listed in PRD §10.1.
   The frontend uses hand-authored adapter DTOs isolated in `src/shared/api/`;
   the migration path to generated types is documented in the same file.
@@ -251,3 +327,7 @@ axe audit. Keyboard flows are covered by Playwright.
   UI primitive, its origin, and each local modification
 - [`docs/api-contract-notes.md`](./docs/api-contract-notes.md) — verified API
   contract, PRD contradictions, and the generated-types migration path
+- [`frontend-cd`](https://github.com/mustapha-smail-org/frontend-cd) — desired
+  deployment state and the runtime config pushed to each environment
+- [`deployment-workflows`](https://github.com/mustapha-smail-org/deployment-workflows) —
+  the reusable CI/CD templates this repo's `.github/workflows/` call into
