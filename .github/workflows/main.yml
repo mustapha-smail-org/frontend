@@ -18,7 +18,5 @@ jobs:
       sonar-project-name: 'CityPulse Frontend'
       sonar-organization: mustapha-smail-org
       coverage-threshold: '85'
-      automation-app-id: ${{ vars.AUTOMATION_APP_ID }}
     secrets:
       sonar-token: ${{ secrets.SONAR_TOKEN }}
-      automation-app-private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
