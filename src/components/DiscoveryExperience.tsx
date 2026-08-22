@@ -20,25 +20,25 @@ function apiParams(filters: { query: string; period: string; category: string; f
   return params;
 }
 
-export function DiscoveryExperience({ initialEvents, initialMarkers, categories, initialError = false }: { initialEvents: CursorPage<EventSummary>; initialMarkers: EventMapMarker[]; categories: string[]; initialError?: boolean }) {
+export function DiscoveryExperience({ initialEvents, initialMap, categories, initialError = false }: { initialEvents: CursorPage<EventSummary>; initialMap: CursorPage<EventMapMarker>; categories: string[]; initialError?: boolean }) {
   const searchParams = useSearchParams(); const router = useRouter();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [period, setPeriod] = useState(searchParams.get("periode") ?? "");
   const [category, setCategory] = useState(searchParams.get("categorie") ?? "");
   const [free, setFree] = useState(searchParams.get("gratuit") === "1");
   const [view, setView] = useState<View>("list");
-  const [events, setEvents] = useState(initialEvents); const [markers, setMarkers] = useState(initialMarkers);
+  const [events, setEvents] = useState(initialEvents); const [markers, setMarkers] = useState(initialMap.items);
+  const [mapCursor, setMapCursor] = useState(initialMap.nextCursor); const [mapHasNext, setMapHasNext] = useState(initialMap.hasNext);
   const [error, setError] = useState(initialError); const [selectedId, setSelectedId] = useState<string | null>(null); const [isPending, startTransition] = useTransition();
 
   function filters() { return { query, period, category, free }; }
   async function refresh(next = filters()) {
     setError(false);
     const params = apiParams(next);
-    const mapParams = new URLSearchParams(params); mapParams.set("limit", "100");
-    // Start both, but don't make the (fast) list wait on the heavier map query —
-    // filters should feel instant. Markers land independently; a map failure
-    // never blocks or errors the list.
-    const markersPromise = fetch(`/api/events/map?${mapParams}`)
+    // Same filters + limit as the list so the map tracks it. Start both, but
+    // don't make the (fast) list wait on the map query — filters should feel
+    // instant. Markers land independently; a map failure never blocks the list.
+    const markersPromise = fetch(`/api/events/map?${params}`)
       .then((response) => (response.ok ? (response.json() as Promise<CursorPage<EventMapMarker>>) : null))
       .catch(() => null);
     try {
@@ -51,7 +51,7 @@ export function DiscoveryExperience({ initialEvents, initialMarkers, categories,
       router.replace(`/decouvrir${url.size ? `?${url}` : ""}`, { scroll: false });
     } catch { setError(true); return; }
     const nextMarkers = await markersPromise;
-    if (nextMarkers) setMarkers(nextMarkers.items);
+    if (nextMarkers) { setMarkers(nextMarkers.items); setMapCursor(nextMarkers.nextCursor); setMapHasNext(nextMarkers.hasNext); }
   }
   function submit(event: FormEvent) { event.preventDefault(); startTransition(() => { void refresh(); }); }
   function changeFilter(next: Partial<ReturnType<typeof filters>>) {
@@ -60,11 +60,23 @@ export function DiscoveryExperience({ initialEvents, initialMarkers, categories,
     startTransition(() => { void refresh(values); });
   }
   async function loadMore() {
-    if (!events.nextCursor) return;
-    const response = await fetch(`/api/events?${apiParams(filters(), events.nextCursor)}`);
-    if (!response.ok) { setError(true); return; }
-    const page = await response.json() as CursorPage<EventSummary>;
-    setEvents({ ...page, items: [...events.items, ...page.items] });
+    const wantList = Boolean(events.nextCursor); const wantMap = mapHasNext && Boolean(mapCursor);
+    if (!wantList && !wantMap) return;
+    // List and map paginate independently (the map endpoint returns only
+    // geolocated events), so advance each by its own cursor and append both.
+    const [listResponse, mapResponse] = await Promise.all([
+      wantList ? fetch(`/api/events?${apiParams(filters(), events.nextCursor!)}`) : null,
+      wantMap ? fetch(`/api/events/map?${apiParams(filters(), mapCursor!)}`).catch(() => null) : null,
+    ]);
+    if (wantList) {
+      if (!listResponse!.ok) { setError(true); return; }
+      const page = await listResponse!.json() as CursorPage<EventSummary>;
+      setEvents({ ...page, items: [...events.items, ...page.items] });
+    }
+    if (wantMap && mapResponse?.ok) {
+      const page = await mapResponse.json() as CursorPage<EventMapMarker>;
+      setMarkers((current) => [...current, ...page.items]); setMapCursor(page.nextCursor); setMapHasNext(page.hasNext);
+    }
   }
   return (
     <div className="discover-experience">
@@ -84,7 +96,7 @@ export function DiscoveryExperience({ initialEvents, initialMarkers, categories,
           {error ? <div className="inline-error"><strong>Impossible de charger les sorties.</strong><button onClick={() => void refresh()}>Réessayer</button></div> : events.items.length ? <div className="compact-list">{events.items.map((event) => <div key={event.id} data-selected={selectedId === event.id} onMouseEnter={() => setSelectedId(event.id)} onMouseLeave={() => setSelectedId(null)}><EventCard event={event} compact /></div>)}</div> : <div className="inline-error"><strong>Aucune sortie trouvée.</strong><span>Modifiez les filtres pour élargir la recherche.</span></div>}
           {events.hasNext && <button className="load-more" onClick={() => void loadMore()}>Afficher plus de sorties</button>}
         </section>
-        <section className="discover-map-wrap" aria-label="Carte des résultats"><DiscoveryMap markers={markers} selectedId={selectedId} onSelect={setSelectedId}/></section>
+        <section className="discover-map-wrap" aria-label="Carte des résultats"><DiscoveryMap markers={markers} selectedId={selectedId} onSelect={setSelectedId}/>{mapHasNext && <button className="map-load-more" onClick={() => void loadMore()}>Afficher plus de lieux</button>}</section>
       </div>
     </div>
   );
