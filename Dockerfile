@@ -7,19 +7,20 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM node:22-alpine AS runner
 
 LABEL org.opencontainers.image.title="frontend" \
-      org.opencontainers.image.description="CityPulse frontend SPA"
+      org.opencontainers.image.description="CityPulse frontend (Next.js)"
 
-# jq: used by docker/entrypoint.sh to split the mounted app-config.json into
-# the server-side API_GATEWAY_URL and the browser-facing config.js payload.
-RUN apk add --no-cache jq
+WORKDIR /app
+ENV NODE_ENV=production \
+    PORT=8080 \
+    HOSTNAME=0.0.0.0
 
-COPY --from=builder /app/dist/ /usr/share/nginx/html/
-COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Next.js standalone output: server.js plus the minimal traced node_modules.
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 
 EXPOSE 8080
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node", "server.js"]
