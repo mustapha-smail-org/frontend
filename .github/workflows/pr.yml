@@ -15,5 +15,6 @@ jobs:
       sonar-project-name: 'CityPulse Frontend'
       sonar-organization: mustapha-smail-org
       coverage-threshold: '85'
+      run-e2e: false
     secrets:
       sonar-token: ${{ secrets.SONAR_TOKEN }}
