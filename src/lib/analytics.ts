@@ -9,7 +9,7 @@ const STORAGE_KEY = "ps-consent";
 /** GA4 Measurement ID. Overridable per environment; the production ID is the
  *  default so the tag also works from a plain build. An empty value disables
  *  analytics entirely — the consent banner included. */
-export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-NR5L2VGXGC";
+export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-XXXXXXXXXX";
 
 export const analyticsEnabled = GA_MEASUREMENT_ID.length > 0;
 
