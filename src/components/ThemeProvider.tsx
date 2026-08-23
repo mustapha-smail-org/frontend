@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { Theme } from "@astryxdesign/core/theme";
+import { InternationalizationProvider } from "@astryxdesign/core/i18n";
 import { panameSpotTheme } from "@/theme/paname-spot";
 
 export type ThemeMode = "system" | "light" | "dark";
@@ -54,7 +55,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   return (
     <ThemeContext.Provider value={value}>
-      <Theme theme={panameSpotTheme} mode={mode}>{children}</Theme>
+      <Theme theme={panameSpotTheme} mode={mode}>
+        <InternationalizationProvider locale="fr-FR">{children}</InternationalizationProvider>
+      </Theme>
     </ThemeContext.Provider>
   );
 }
