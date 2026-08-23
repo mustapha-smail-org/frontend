@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppShell } from "@/components/AppShell";
+import { Analytics } from "@/components/Analytics";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import "@astryxdesign/core/reset.css";
 import "@astryxdesign/core/astryx.css";
 import "@/theme/paname-spot.css";
@@ -53,6 +55,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-full">
         <ThemeProvider>
           <AppShell>{children}</AppShell>
+          <CookieConsentBanner />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
