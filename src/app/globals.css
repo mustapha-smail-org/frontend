@@ -124,6 +124,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .compact-list>div[data-selected=true] .event-card { border-color:var(--red); box-shadow:0 0 0 2px rgba(242,56,74,.22); }
 .load-more,.inline-error button { display:block; margin:1.2rem auto 0; padding:.75rem 1.2rem; border:1px solid var(--line); border-radius:11px; background:var(--card); color:var(--ink); font-size:.78rem; font-weight:750; cursor:pointer; }
 .discover-map-wrap { position:sticky; top:4.5rem; height:calc(100vh - 4.5rem); border:1px solid var(--line); border-radius:14px; overflow:hidden; } .discovery-map { width:100%; height:100%; background:var(--surface-2); isolation:isolate; } .map-loading { display:flex; width:100%; height:100%; min-height:18rem; align-items:center; justify-content:center; gap:.6rem; color:var(--muted); }
+/* Desktop shows list + map together, so the list's "load more" drives both.
+   The on-map button is a mobile-only affordance (see the max-width:1023px block). */
+.map-load-more { display:none; }
 .paname-marker { border:0!important; background:transparent!important; } .paname-marker span { display:block; width:27px; height:34px; border:3px solid #fff; border-radius:50% 50% 50% 0; background:var(--red); box-shadow:0 3px 10px rgba(0,0,0,.28); transform:rotate(-45deg); }
 .paname-marker.selected span { width:33px; height:41px; background:#071A33; }
 .map-popup { display:flex; min-width:11rem; flex-direction:column; gap:.3rem; font-family:var(--font-inter),'Inter',sans-serif; } .map-popup p { margin:0; color:var(--red); font-size:.66rem; font-weight:750; text-transform:uppercase; } .map-popup strong { color:#071A33; font-size:.9rem; line-height:1.2; } .map-popup span { color:#6A6E75; font-size:.7rem; } .map-popup a { margin-top:.35rem; color:var(--red-dark); font-size:.72rem; font-weight:750; }
@@ -170,6 +173,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .event-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .view-switch { display:flex; } .discover-results { display:block; min-height:35rem; } .discover-list { max-height:none; padding:1rem; border-right:0; } .discover-map-wrap { position:relative; top:auto; height:65vh; min-height:28rem; }
   .view-list .discover-map-wrap,.view-map .discover-list { display:none; }
+  .map-load-more { display:block; position:absolute; left:50%; bottom:1rem; transform:translateX(-50%); z-index:1000; margin:0; padding:.7rem 1.15rem; border:1px solid var(--line); border-radius:11px; background:var(--card); color:var(--ink); font-size:.78rem; font-weight:750; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.18); }
   .event-sidebar { position:static; }
 }
 @media (max-width:767px) {
