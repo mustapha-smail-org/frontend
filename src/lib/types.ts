@@ -64,7 +64,12 @@ export interface EventMapMarker {
 
 export interface CursorPage<T> { items: T[]; nextCursor: string | null; hasNext: boolean; }
 
+export interface Facet { value: string; count: number; }
+export interface EventFacets { categories: Facet[]; arrondissements: Facet[]; }
+
 export interface EventSearchOptions {
-  period?: EventPeriod; query?: string; category?: string; pricing?: "ALL" | PricingCategory;
+  period?: EventPeriod; date?: string; query?: string;
+  category?: string; categories?: string[];
+  arrondissements?: string[]; pricing?: "ALL" | PricingCategory;
   cursor?: string; limit?: number;
 }

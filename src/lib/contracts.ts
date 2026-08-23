@@ -38,3 +38,5 @@ export const eventDetailSchema = z.object({
 export const eventSummaryPageSchema = z.object({ items: z.array(eventSummarySchema), nextCursor: nullableString, hasNext: z.boolean() });
 export const eventMapPageSchema = z.object({ items: z.array(eventMapMarkerSchema), nextCursor: nullableString, hasNext: z.boolean() });
 export const categoriesSchema = z.array(z.string());
+export const facetCountSchema = z.object({ value: z.string(), count: z.number().int().nonnegative() });
+export const eventFacetsSchema = z.object({ categories: z.array(facetCountSchema), arrondissements: z.array(facetCountSchema) });

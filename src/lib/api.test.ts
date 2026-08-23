@@ -5,6 +5,7 @@ import {
   getCategories,
   getEventBySlug,
   getEvents,
+  getFacets,
   getMapEvents,
   reportEvent,
   submitFeedback,
@@ -24,6 +25,13 @@ describe("eventSearchParams", () => {
     const params = eventSearchParams({ period: "TODAY", pricing: "ALL" });
     expect(params.get("period")).toBe("TODAY"); expect(params.get("pricing")).toBeNull(); expect(params.get("limit")).toBe("12");
   });
+  it("appends repeated category/arrondissement params and a specific date", () => {
+    const params = eventSearchParams({ date: "2026-08-25", categories: ["Concerts", "Expositions"], arrondissements: ["1", "OUTSIDE_PARIS"], pricing: "PAID" });
+    expect(params.get("date")).toBe("2026-08-25");
+    expect(params.getAll("categories")).toEqual(["Concerts", "Expositions"]);
+    expect(params.getAll("arrondissements")).toEqual(["1", "OUTSIDE_PARIS"]);
+    expect(params.get("pricing")).toBe("PAID");
+  });
 });
 
 describe("catalog fetch helpers", () => {
@@ -39,6 +47,14 @@ describe("catalog fetch helpers", () => {
   it("returns the categories array", async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse(["Concert", "Expo"]));
     await expect(getCategories()).resolves.toEqual(["Concert", "Expo"]);
+  });
+  it("parses validated facet counts and targets the facets endpoint", async () => {
+    const fetchMock = vi.mocked(fetch);
+    const facets = { categories: [{ value: "Concerts", count: 3 }], arrondissements: [{ value: "1", count: 2 }] };
+    fetchMock.mockResolvedValue(jsonResponse(facets));
+    await expect(getFacets({ categories: ["Concerts"] })).resolves.toEqual(facets);
+    expect(fetchMock.mock.calls[0][0]).toContain("/api/v1/events/facets");
+    expect(fetchMock.mock.calls[0][0]).toContain("categories=Concerts");
   });
   it("throws ApiError on a non-ok response, tagged with the status", async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({}, false, 503));

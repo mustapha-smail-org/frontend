@@ -1,6 +1,6 @@
-import type { CursorPage, EventDetail, EventMapMarker, EventSearchOptions, EventSummary } from "@/lib/types";
+import type { CursorPage, EventDetail, EventFacets, EventMapMarker, EventSearchOptions, EventSummary } from "@/lib/types";
 import type { z } from "zod";
-import { categoriesSchema, eventDetailSchema, eventMapPageSchema, eventSummaryPageSchema } from "@/lib/contracts";
+import { categoriesSchema, eventDetailSchema, eventFacetsSchema, eventMapPageSchema, eventSummaryPageSchema } from "@/lib/contracts";
 
 export const serverApiBase = process.env.CITYPULSE_API_BASE_URL ?? "http://localhost:8080";
 
@@ -15,8 +15,11 @@ export function eventSearchParams(options: EventSearchOptions = {}) {
   params.set("sort", "START_DATE");
   params.set("limit", String(options.limit ?? 12));
   if (options.period) params.set("period", options.period);
+  if (options.date) params.set("date", options.date);
   if (options.query?.trim()) params.set("query", options.query.trim());
   if (options.category) params.set("category", options.category);
+  for (const category of options.categories ?? []) params.append("categories", category);
+  for (const arrondissement of options.arrondissements ?? []) params.append("arrondissements", arrondissement);
   if (options.pricing && options.pricing !== "ALL") params.set("pricing", options.pricing);
   if (options.cursor) params.set("cursor", options.cursor);
   return params;
@@ -39,6 +42,9 @@ export function getMapEvents(options: EventSearchOptions = {}) {
   return getJson<CursorPage<EventMapMarker>>(`/api/v1/events/map?${eventSearchParams({ ...options, limit: options.limit ?? 100 })}`, eventMapPageSchema);
 }
 export function getCategories() { return getJson<string[]>("/api/v1/categories", categoriesSchema); }
+export function getFacets(options: EventSearchOptions = {}) {
+  return getJson<EventFacets>(`/api/v1/events/facets?${eventSearchParams(options)}`, eventFacetsSchema);
+}
 export function getEventBySlug(slug: string) {
   return getJson<EventDetail>(`/api/v1/events/slug/${encodeURIComponent(slug)}`, eventDetailSchema);
 }
