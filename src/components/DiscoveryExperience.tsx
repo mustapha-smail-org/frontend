@@ -11,7 +11,7 @@ const DiscoveryMap = dynamic(() => import("@/components/DiscoveryMap").then((mod
 type View = "list" | "map";
 
 function apiParams(filters: { query: string; period: string; category: string; free: boolean }, cursor?: string) {
-  const params = new URLSearchParams({ sort: "START_DATE", limit: "18" });
+  const params = new URLSearchParams({ sort: "START_DATE", limit: "50" });
   if (filters.query.trim()) params.set("query", filters.query.trim());
   if (filters.period) params.set("period", filters.period);
   if (filters.category) params.set("category", filters.category);
