@@ -3,15 +3,17 @@
 import Script from "next/script";
 import {usePathname} from "next/navigation";
 import {useEffect, useRef} from "react";
-import {analyticsEnabled, gaBootstrap, gaScriptSrc, trackPageView, useConsent} from "@/lib/analytics";
+import {gaBootstrap, gaScriptSrc, trackPageView, useConsent} from "@/lib/analytics";
+import {useGaId} from "@/components/AnalyticsProvider";
 
 /** Loads Google Analytics only once consent is granted (load-on-consent) and
  *  sends a page_view on each subsequent client navigation. Nothing from Google
  *  is fetched or executed before the user accepts. */
 export function Analytics() {
+    const gaId = useGaId();
     const {choice} = useConsent();
     const pathname = usePathname();
-    const active = analyticsEnabled && choice === "granted";
+    const active = gaId.length > 0 && choice === "granted";
     const lastPath = useRef<string | null>(null);
 
     useEffect(() => {
@@ -31,8 +33,8 @@ export function Analytics() {
 
     return (
         <>
-            <Script src={gaScriptSrc()} strategy="afterInteractive"/>
-            <Script id="ga-init" strategy="afterInteractive" dangerouslySetInnerHTML={{__html: gaBootstrap()}}/>
+            <Script src={gaScriptSrc(gaId)} strategy="afterInteractive"/>
+            <Script id="ga-init" strategy="afterInteractive" dangerouslySetInnerHTML={{__html: gaBootstrap(gaId)}}/>
         </>
     );
 }

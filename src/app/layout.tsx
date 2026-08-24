@@ -4,6 +4,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppShell } from "@/components/AppShell";
 import { Analytics } from "@/components/Analytics";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import "@astryxdesign/core/reset.css";
 import "@astryxdesign/core/astryx.css";
@@ -14,6 +15,10 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap", weight: ["400", "500", "600", "700"] });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://panamespot.fr";
+
+// Read server-side at runtime (not NEXT_PUBLIC), so the GA id is per-environment
+// and not baked into the client bundle. Empty = analytics off.
+const gaId = process.env.GA_ID ?? "";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -54,9 +59,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="min-h-full">
         <ThemeProvider>
-          <AppShell>{children}</AppShell>
-          <CookieConsentBanner />
-          <Analytics />
+          <AnalyticsProvider gaId={gaId}>
+            <AppShell>{children}</AppShell>
+            <CookieConsentBanner />
+            <Analytics />
+          </AnalyticsProvider>
         </ThemeProvider>
       </body>
     </html>
