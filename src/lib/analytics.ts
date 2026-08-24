@@ -6,14 +6,7 @@ export type ConsentChoice = "granted" | "denied";
 
 const STORAGE_KEY = "ps-consent";
 
-/** GA4 Measurement ID. Overridable per environment; the production ID is the
- *  default so the tag also works from a plain build. An empty value disables
- *  analytics entirely — the consent banner included. */
-export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-XXXXXXXXXX";
-
-export const analyticsEnabled = GA_MEASUREMENT_ID.length > 0;
-
-export function gaScriptSrc(id: string = GA_MEASUREMENT_ID): string {
+export function gaScriptSrc(id: string): string {
     return `https://www.googletagmanager.com/gtag/js?id=${id}`;
 }
 
@@ -21,7 +14,7 @@ export function gaScriptSrc(id: string = GA_MEASUREMENT_ID): string {
  *  page on which consent was granted; every later SPA navigation is sent by
  *  `trackPageView`. This runs only once the tag is mounted, which we do
  *  exclusively after consent — nothing from Google loads before then. */
-export function gaBootstrap(id: string = GA_MEASUREMENT_ID): string {
+export function gaBootstrap(id: string): string {
     return `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${id}');`;
 }
 

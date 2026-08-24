@@ -2,8 +2,6 @@
 import {act, renderHook} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {
-    GA_MEASUREMENT_ID,
-    analyticsEnabled,
     gaBootstrap,
     gaScriptSrc,
     readConsent,
@@ -23,11 +21,6 @@ afterEach(() => {
 });
 
 describe("gtag helpers", () => {
-    it("is enabled with a default measurement id", () => {
-        expect(analyticsEnabled).toBe(true);
-        expect(GA_MEASUREMENT_ID).toMatch(/^G-/);
-    });
-
     it("builds the loader src from the id", () => {
         expect(gaScriptSrc("G-TEST")).toBe("https://www.googletagmanager.com/gtag/js?id=G-TEST");
     });
