@@ -163,53 +163,61 @@ function ListChrome({ state, empty, onReload, children }: { state: LoadState; em
   return <>{children}</>;
 }
 
-function FeedbackList({ token }: { token: string }) {
-  const { items, state, nextCursor, loadingMore, reload, loadMore } = useSubmissions<FeedbackSubmission>(token, getFeedback);
+// Shared card fields plus the per-type bits (tag + body); the surrounding card,
+// status/date row, email/note footer, list and pagination are rendered once.
+type CardView = { key: string; tag: React.ReactNode; body: React.ReactNode; status: string; createdAt: string | null; email: string | null; internalNote: string | null };
+
+function SubmissionList<T>({ token, fetcher, toCard }: {
+  token: string;
+  fetcher: (token: string, page: number) => Promise<{ items: T[]; nextCursor: string | null; hasNext: boolean }>;
+  toCard: (item: T) => CardView;
+}) {
+  const { items, state, nextCursor, loadingMore, reload, loadMore } = useSubmissions<T>(token, fetcher);
   return (
     <ListChrome state={state} empty={items.length === 0} onReload={reload}>
       <ul className="admin-list">
-        {items.map((item) => (
-          <li key={item.id} className="admin-card">
-            <div className="admin-card-top">
-              <span className="admin-tag">{FEEDBACK_TYPE_LABELS[item.type]}</span>
-              <StatusPill status={item.status} />
-              <time className="admin-date">{formatDate(item.createdAt)}</time>
-            </div>
-            <p className="admin-message">{item.message}</p>
-            <div className="admin-card-foot">
-              {item.email ? <a href={`mailto:${item.email}`}>{item.email}</a> : <span className="admin-muted">Sans e-mail</span>}
-              {item.internalNote ? <span className="admin-note-inline">Note : {item.internalNote}</span> : null}
-            </div>
-          </li>
-        ))}
+        {items.map((item) => {
+          const card = toCard(item);
+          return (
+            <li key={card.key} className="admin-card">
+              <div className="admin-card-top">
+                {card.tag}
+                <StatusPill status={card.status} />
+                <time className="admin-date">{formatDate(card.createdAt)}</time>
+              </div>
+              {card.body}
+              <div className="admin-card-foot">
+                {card.email ? <a href={`mailto:${card.email}`}>{card.email}</a> : <span className="admin-muted">Sans e-mail</span>}
+                {card.internalNote ? <span className="admin-note-inline">Note : {card.internalNote}</span> : null}
+              </div>
+            </li>
+          );
+        })}
       </ul>
       {nextCursor ? <button type="button" className="admin-more" disabled={loadingMore} onClick={loadMore}>{loadingMore ? "Chargement…" : "Charger plus"}</button> : null}
     </ListChrome>
   );
 }
 
+function FeedbackList({ token }: { token: string }) {
+  return <SubmissionList<FeedbackSubmission> token={token} fetcher={getFeedback} toCard={(item) => ({
+    key: item.id,
+    tag: <span className="admin-tag">{FEEDBACK_TYPE_LABELS[item.type]}</span>,
+    body: <p className="admin-message">{item.message}</p>,
+    status: item.status, createdAt: item.createdAt, email: item.email, internalNote: item.internalNote,
+  })} />;
+}
+
 function ReportList({ token }: { token: string }) {
-  const { items, state, nextCursor, loadingMore, reload, loadMore } = useSubmissions<EventReport>(token, getReports);
-  return (
-    <ListChrome state={state} empty={items.length === 0} onReload={reload}>
-      <ul className="admin-list">
-        {items.map((item) => (
-          <li key={item.id} className="admin-card">
-            <div className="admin-card-top">
-              <span className="admin-tag admin-tag-alert">{REPORT_TYPE_LABELS[item.type]}</span>
-              <StatusPill status={item.status} />
-              <time className="admin-date">{formatDate(item.createdAt)}</time>
-            </div>
-            <a className="admin-event-link" href={`/events/${item.eventSlug}`} target="_blank" rel="noreferrer">{item.eventTitle}</a>
-            {item.message ? <p className="admin-message">{item.message}</p> : <p className="admin-muted">Aucun message</p>}
-            <div className="admin-card-foot">
-              {item.email ? <a href={`mailto:${item.email}`}>{item.email}</a> : <span className="admin-muted">Sans e-mail</span>}
-              {item.internalNote ? <span className="admin-note-inline">Note : {item.internalNote}</span> : null}
-            </div>
-          </li>
-        ))}
-      </ul>
-      {nextCursor ? <button type="button" className="admin-more" disabled={loadingMore} onClick={loadMore}>{loadingMore ? "Chargement…" : "Charger plus"}</button> : null}
-    </ListChrome>
-  );
+  return <SubmissionList<EventReport> token={token} fetcher={getReports} toCard={(item) => ({
+    key: item.id,
+    tag: <span className="admin-tag admin-tag-alert">{REPORT_TYPE_LABELS[item.type]}</span>,
+    body: (
+      <>
+        <a className="admin-event-link" href={`/events/${item.eventSlug}`} target="_blank" rel="noreferrer">{item.eventTitle}</a>
+        {item.message ? <p className="admin-message">{item.message}</p> : <p className="admin-muted">Aucun message</p>}
+      </>
+    ),
+    status: item.status, createdAt: item.createdAt, email: item.email, internalNote: item.internalNote,
+  })} />;
 }
