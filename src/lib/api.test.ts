@@ -6,7 +6,9 @@ import {
   getEventBySlug,
   getEvents,
   getFacets,
+  getFeedback,
   getMapEvents,
+  getReports,
   reportEvent,
   submitFeedback,
 } from "@/lib/api";
@@ -76,5 +78,29 @@ describe("BFF post helpers", () => {
   it("throws ApiError when a report is rejected", async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({}, false, 400));
     await expect(reportEvent("some-slug", { type: "WRONG_INFO" })).rejects.toBeInstanceOf(ApiError);
+  });
+});
+
+describe("admin read helpers", () => {
+  beforeEach(() => vi.stubGlobal("fetch", vi.fn()));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("sends the admin token header and parses a feedback page", async () => {
+    const fetchMock = vi.mocked(fetch);
+    const page = { items: [{ id: "1", type: "BUG", message: "hi", email: null, status: "OPEN", createdAt: null, processedAt: null, internalNote: null }], nextCursor: null, hasNext: false };
+    fetchMock.mockResolvedValue(jsonResponse(page));
+    await expect(getFeedback("s3cret", 2)).resolves.toEqual(page);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/admin/feedback?page=2");
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ headers: { "x-admin-token": "s3cret" } });
+  });
+  it("targets the reports route", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue(jsonResponse({ items: [], nextCursor: null, hasNext: false }));
+    await getReports("s3cret");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/admin/reports?page=0");
+  });
+  it("throws ApiError tagged with 401 on an invalid token", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({}, false, 401));
+    await expect(getFeedback("wrong")).rejects.toMatchObject({ status: 401 });
   });
 });

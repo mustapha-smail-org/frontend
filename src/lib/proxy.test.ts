@@ -17,6 +17,13 @@ describe("BFF proxy", () => {
     expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8080/api/v1/events?limit=5");
     expect(res.status).toBe(200); expect(await res.text()).toBe('{"items":[]}');
   });
+  it("forwards extra headers (admin token) to the upstream on GET", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue(upstream('{"items":[]}', 200));
+    await proxyGet(new NextRequest("http://localhost/api/admin/feedback?page=0"), "/api/v1/feedback", { "X-Admin-Token": "s3cret" });
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8080/api/v1/feedback?page=0");
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ headers: { Accept: "application/json", "X-Admin-Token": "s3cret" } });
+  });
   it("falls back to a JSON content-type when the upstream omits one", async () => {
     vi.mocked(fetch).mockResolvedValue(upstream("{}", 200, null));
     const res = await proxyGet(new NextRequest("http://localhost/api/categories"), "/api/v1/categories");

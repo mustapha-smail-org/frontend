@@ -64,6 +64,20 @@ export interface EventMapMarker {
 
 export interface CursorPage<T> { items: T[]; nextCursor: string | null; hasNext: boolean; }
 
+export type FeedbackType = "GENERAL" | "BUG" | "CONTENT";
+export type EventReportType = "INCORRECT_INFORMATION" | "EVENT_CANCELLED" | "BROKEN_LINK" | "INAPPROPRIATE_CONTENT";
+
+export interface FeedbackSubmission {
+  id: string; type: FeedbackType; message: string; email: string | null;
+  status: string; createdAt: string | null; processedAt: string | null; internalNote: string | null;
+}
+
+export interface EventReport {
+  id: string; eventId: string; eventSlug: string; eventTitle: string;
+  type: EventReportType; message: string | null; email: string | null;
+  status: string; createdAt: string | null; processedAt: string | null; internalNote: string | null;
+}
+
 export interface Facet { value: string; count: number; }
 export interface EventFacets { categories: Facet[]; arrondissements: Facet[]; }
 
