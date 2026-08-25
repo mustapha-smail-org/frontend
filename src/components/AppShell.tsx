@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
+import { FeedbackPopup } from "@/components/FeedbackPopup";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -20,7 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main id="contenu">{children}</main>
-      <FeedbackWidget /><SiteNavigation mobile />
+      <FeedbackWidget /><FeedbackPopup /><SiteNavigation mobile />
       <footer className="site-footer shell-pad">
         <div className="mx-auto grid max-w-[88rem] gap-10 py-12 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
           <div><BrandMark inverse /><p className="mt-5 max-w-sm text-sm leading-6 text-white/65">Les événements de Paris, lisibles sans compte et mis à jour depuis les données publiques de la Ville.</p></div>
