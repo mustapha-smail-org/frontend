@@ -35,6 +35,20 @@ export const eventDetailSchema = z.object({
   occurrences: z.array(z.object({ start: nullableString, end: nullableString })),
 });
 
+export const feedbackSubmissionSchema = z.object({
+  id: z.string(), type: z.enum(["GENERAL", "BUG", "CONTENT"]), message: z.string(),
+  email: nullableString, status: z.string(), createdAt: nullableString,
+  processedAt: nullableString, internalNote: nullableString,
+});
+export const eventReportSchema = z.object({
+  id: z.string(), eventId: z.string(), eventSlug: z.string(), eventTitle: z.string(),
+  type: z.enum(["INCORRECT_INFORMATION", "EVENT_CANCELLED", "BROKEN_LINK", "INAPPROPRIATE_CONTENT"]),
+  message: nullableString, email: nullableString, status: z.string(),
+  createdAt: nullableString, processedAt: nullableString, internalNote: nullableString,
+});
+export const feedbackPageSchema = z.object({ items: z.array(feedbackSubmissionSchema), nextCursor: nullableString, hasNext: z.boolean() });
+export const eventReportPageSchema = z.object({ items: z.array(eventReportSchema), nextCursor: nullableString, hasNext: z.boolean() });
+
 export const eventSummaryPageSchema = z.object({ items: z.array(eventSummarySchema), nextCursor: nullableString, hasNext: z.boolean() });
 export const eventMapPageSchema = z.object({ items: z.array(eventMapMarkerSchema), nextCursor: nullableString, hasNext: z.boolean() });
 export const categoriesSchema = z.array(z.string());

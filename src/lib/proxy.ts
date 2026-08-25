@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverApiBase } from "@/lib/api";
 
-export async function proxyGet(request: NextRequest, upstreamPath: string) {
+export async function proxyGet(request: NextRequest, upstreamPath: string, extraHeaders?: Record<string, string>) {
   const response = await fetch(`${serverApiBase}${upstreamPath}${request.nextUrl.search}`, {
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", ...extraHeaders },
     cache: "no-store",
     signal: AbortSignal.timeout(8_000),
   });

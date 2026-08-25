@@ -1,6 +1,6 @@
-import type { CursorPage, EventDetail, EventFacets, EventMapMarker, EventSearchOptions, EventSummary } from "@/lib/types";
+import type { CursorPage, EventDetail, EventFacets, EventMapMarker, EventReport, EventSearchOptions, EventSummary, FeedbackSubmission } from "@/lib/types";
 import type { z } from "zod";
-import { categoriesSchema, eventDetailSchema, eventFacetsSchema, eventMapPageSchema, eventSummaryPageSchema } from "@/lib/contracts";
+import { categoriesSchema, eventDetailSchema, eventFacetsSchema, eventMapPageSchema, eventReportPageSchema, eventSummaryPageSchema, feedbackPageSchema } from "@/lib/contracts";
 
 export const serverApiBase = process.env.CITYPULSE_API_BASE_URL ?? "http://localhost:8080";
 
@@ -63,4 +63,21 @@ export function submitFeedback(payload: { type: string; message: string; email?:
 }
 export function reportEvent(slug: string, payload: { type: string; message?: string; email?: string }) {
   return postJson<{ id: string; status: string }>(`/api/events/${encodeURIComponent(slug)}/reports`, payload);
+}
+
+// Admin read path: fetched client-side through the BFF proxy, which validates
+// the shared secret and forwards it to the catalog service.
+async function getAdminJson<T>(path: string, token: string, schema: z.ZodType<T>): Promise<T> {
+  const response = await fetch(path, {
+    headers: { Accept: "application/json", "x-admin-token": token },
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) throw new ApiError(response.status, path);
+  return schema.parse(await response.json());
+}
+export function getFeedback(token: string, page = 0) {
+  return getAdminJson<CursorPage<FeedbackSubmission>>(`/api/admin/feedback?page=${page}`, token, feedbackPageSchema);
+}
+export function getReports(token: string, page = 0) {
+  return getAdminJson<CursorPage<EventReport>>(`/api/admin/reports?page=${page}`, token, eventReportPageSchema);
 }
