@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Clock3, Moon, Palette, Sparkles, Ticket } from "lucide-react";
+import { ArrowRight, Clock3, Flame, Heart, Hourglass, Leaf, Moon, Sparkles, Ticket } from "lucide-react";
 import { EventGrid } from "@/components/EventGrid";
 import { getEvents } from "@/lib/api";
 import type { EventSummary } from "@/lib/types";
+import { buildTodayRails, parisToday } from "@/lib/todayRails";
 
 export const metadata: Metadata = {
   title: "Que faire aujourd’hui à Paris",
@@ -11,21 +13,21 @@ export const metadata: Metadata = {
   alternates: { canonical: "/aujourdhui" },
 };
 
-// Honest, rule-based grouping only. Real editorial curation (incontournables,
-// pépites, moods) arrives with the AI-enrichment backend — see the WIP notice.
-const CULTURE = /(expo|mus[ée]e|th[ée][âa]tre|galerie|cin[ée]ma|danse|spectacle|art|lecture|conf[ée]rence|opéra|opera)/i;
-
 export default async function TodayPage() {
   let events: EventSummary[] = [];
   let unavailable = false;
-  try { events = (await getEvents({ period: "TODAY", limit: 40 })).items; } catch { unavailable = true; }
+  try { events = (await getEvents({ period: "TODAY", sort: "RELEVANCE", limit: 60 })).items; } catch { unavailable = true; }
 
-  const free = events.filter((event) => event.pricing === "FREE").slice(0, 8);
-  const parisHour = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", hourCycle: "h23", timeZone: "Europe/Paris" });
-  const evening = events
-    .filter((event) => { const date = event.displayStartAt ? new Date(event.displayStartAt) : null; return date && Number(parisHour.format(date)) >= 17; })
-    .slice(0, 8);
-  const culture = events.filter((event) => event.categories.some((category) => CULTURE.test(category))).slice(0, 6);
+  const rails = buildTodayRails(events, parisToday());
+  const sections: { eyebrow: string; icon: ReactNode; title: string; events: EventSummary[] }[] = [
+    { eyebrow: "À ne pas manquer", icon: <Flame size={15} />, title: "Les incontournables", events: rails.incontournables },
+    { eyebrow: "Entrée libre", icon: <Ticket size={15} />, title: "Sortir gratuitement", events: rails.gratuit },
+    { eyebrow: "Après 17 heures", icon: <Moon size={15} />, title: "Pour ce soir", events: rails.ceSoir },
+    { eyebrow: "En plein air", icon: <Leaf size={15} />, title: "Dehors aujourd’hui", events: rails.pleinAir },
+    { eyebrow: "Idéal pour un date", icon: <Heart size={15} />, title: "À deux ce soir", events: rails.date },
+    { eyebrow: "Dernier jour", icon: <Hourglass size={15} />, title: "C’est maintenant ou jamais", events: rails.dernierJour },
+    { eyebrow: "Insolite", icon: <Sparkles size={15} />, title: "Sortir des sentiers battus", events: rails.insolite },
+  ].filter((section) => section.events.length > 0);
 
   return (
     <>
@@ -34,18 +36,6 @@ export default async function TodayPage() {
           <p className="eyebrow"><Clock3 size={16} /> Mis à jour aujourd’hui</p>
           <h1>Paris aujourd’hui,<br /><em>sans perdre une minute.</em></h1>
           <p>Les expositions, concerts, spectacles et rendez-vous accessibles ce jour.</p>
-        </div>
-      </section>
-
-      <section className="shell-pad">
-        <div className="mx-auto max-w-[88rem]">
-          <div className="today-wip" role="note">
-            <Sparkles size={20} aria-hidden="true" />
-            <div>
-              <strong>Sélection en cours d’amélioration <span className="wip-chip">Bientôt</span></strong>
-              <p>Pour l’instant, on affiche simplement ce qui se passe aujourd’hui, sans tri éditorial. Bientôt, Paname Spot mettra en avant les incontournables et les pépites du jour.</p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -59,32 +49,14 @@ export default async function TodayPage() {
         </div>
       </section>
 
-      {!!free.length && (
-        <section className="today-section alternate shell-pad">
+      {sections.map((section, index) => (
+        <section key={section.eyebrow} className={`today-section${index % 2 === 0 ? " alternate" : ""} shell-pad`}>
           <div className="mx-auto max-w-[88rem]">
-            <div className="section-heading"><div><p className="eyebrow"><Ticket size={15} /> Entrée libre</p><h2>Sortir gratuitement</h2></div></div>
-            <EventGrid events={free} />
+            <div className="section-heading"><div><p className="eyebrow">{section.icon} {section.eyebrow}</p><h2>{section.title}</h2></div></div>
+            <EventGrid events={section.events} />
           </div>
         </section>
-      )}
-
-      {!!evening.length && (
-        <section className="today-section shell-pad">
-          <div className="mx-auto max-w-[88rem]">
-            <div className="section-heading"><div><p className="eyebrow"><Moon size={15} /> Après 17 heures</p><h2>Pour ce soir</h2></div></div>
-            <EventGrid events={evening} />
-          </div>
-        </section>
-      )}
-
-      {!!culture.length && (
-        <section className="today-section alternate shell-pad">
-          <div className="mx-auto max-w-[88rem]">
-            <div className="section-heading"><div><p className="eyebrow"><Palette size={15} /> Expos, scènes &amp; musées</p><h2>Culture aujourd’hui</h2></div></div>
-            <EventGrid events={culture} />
-          </div>
-        </section>
-      )}
+      ))}
     </>
   );
 }
