@@ -6,26 +6,30 @@ import {HomeMapPreview} from "@/components/HomeMapPreview";
 import {getEvents, getMapEvents} from "@/lib/api";
 import type {EventMapMarker, EventSummary} from "@/lib/types";
 
+// Prefer the highest-ranked event that actually has a visual (the hero is a
+// full-bleed image), falling back to the top-ranked one otherwise.
+function pickHero(list: EventSummary[]): EventSummary | undefined {
+    return list.find((event) => Boolean(event.imageUrl)) ?? list[0];
+}
+
 export default async function Home() {
-    let events: EventSummary[] = [];
+    let today: EventSummary[] = [];
+    let week: EventSummary[] = [];
     let markers: EventMapMarker[] = [];
     let unavailable = false;
     try {
-        [events, markers] = await Promise.all([(await getEvents({
-            period: "THIS_WEEK",
-            limit: 12
-        })).items, (await getMapEvents({period: "THIS_WEEK", limit: 30})).items]);
+        [today, week, markers] = await Promise.all([
+            getEvents({period: "TODAY", sort: "RELEVANCE", limit: 6}).then((page) => page.items),
+            getEvents({period: "THIS_WEEK", sort: "RELEVANCE", limit: 12}).then((page) => page.items),
+            getMapEvents({period: "THIS_WEEK", limit: 30}).then((page) => page.items),
+        ]);
     } catch {
         unavailable = true;
     }
-    function hashString(s: string) {
-        let h = 5381;
-        for (let i = 0; i < s.length; i++) h = ((h << 5) + h) + s.charCodeAt(i);
-        return Math.abs(h);
-    }
-    const eventsWithImage = events.filter((event) => Boolean(event.imageUrl));
-    const hero = eventsWithImage.length ? eventsWithImage[hashString(eventsWithImage.map((e) => e.id).join("|")) % eventsWithImage.length] : events[0];
-    const selection = events.filter((event) => event.id !== hero?.id).slice(0, 4);
+    // Hero: the top-ranked event of today; when nothing runs today, the top of the week.
+    const hero = pickHero(today) ?? pickHero(week);
+    // "À l'affiche cette semaine": the week's best, minus whatever leads the hero.
+    const selection = week.filter((event) => event.id !== hero?.id).slice(0, 4);
     return (
         <>
             {hero ? <HeroEvent event={hero}/> : <section className="home-fallback shell-pad">
