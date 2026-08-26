@@ -3,6 +3,13 @@ import { z } from "zod";
 const nullableString = z.string().nullable();
 const pricing = z.enum(["FREE", "PAID", "NOT_SPECIFIED"]);
 const environment = z.enum(["INDOOR", "OUTDOOR", "UNKNOWN"]);
+const enrichment = z.object({
+  categories: z.array(z.string()), moodAffinities: z.array(z.string()),
+  socialContexts: z.array(z.string()), semanticTags: z.array(z.string()),
+  energyLevel: nullableString, environmentFallback: nullableString,
+  uniquenessScore: z.number().int().nullable(), qualityScore: z.number().int().nullable(),
+  rankScore: z.number().nullable(),
+}).nullable();
 const schedule = {
   startAt: nullableString, endAt: nullableString, displayStartAt: nullableString,
   displayEndAt: nullableString, ongoing: z.boolean(), scheduleLabel: nullableString,
@@ -12,7 +19,7 @@ export const eventSummarySchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(), summary: nullableString,
   categories: z.array(z.string()), pricing, arrondissement: z.number().int().nullable(), venue: nullableString,
   ...schedule, officialUrl: nullableString, imageUrl: nullableString, imageAlt: nullableString,
-  imageCredit: nullableString, sourceUpdatedAt: nullableString, environment,
+  imageCredit: nullableString, sourceUpdatedAt: nullableString, environment, enrichment,
 });
 
 export const eventMapMarkerSchema = z.object({
@@ -34,7 +41,7 @@ export const eventDetailSchema = z.object({
   pricing: z.object({ type: nullableString, detail: nullableString, accessType: nullableString,
     bookingUrl: nullableString, bookingLinkText: nullableString }).nullable(),
   occurrences: z.array(z.object({ start: nullableString, end: nullableString })),
-  environment,
+  environment, enrichment,
 });
 
 export const feedbackSubmissionSchema = z.object({
