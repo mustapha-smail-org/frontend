@@ -1,5 +1,6 @@
 export type PricingCategory = "FREE" | "PAID" | "NOT_SPECIFIED";
 export type EventPeriod = "TODAY" | "TOMORROW" | "THIS_WEEK" | "THIS_MONTH";
+export type EventEnvironment = "INDOOR" | "OUTDOOR" | "UNKNOWN";
 
 export interface EventSchedule {
   startAt: string | null;
@@ -24,6 +25,7 @@ export interface EventSummary extends EventSchedule {
   imageAlt: string | null;
   imageCredit: string | null;
   sourceUpdatedAt: string | null;
+  environment: EventEnvironment;
 }
 
 export interface EventDetail extends Omit<EventSchedule, "scheduleLabel"> {
@@ -53,6 +55,7 @@ export interface EventDetail extends Omit<EventSchedule, "scheduleLabel"> {
     bookingUrl: string | null; bookingLinkText: string | null;
   } | null;
   occurrences: Array<{ start: string | null; end: string | null }>;
+  environment: EventEnvironment;
 }
 
 export interface EventMapMarker {
