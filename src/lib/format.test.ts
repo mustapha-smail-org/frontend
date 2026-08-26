@@ -27,6 +27,7 @@ describe("date and pricing labels", () => {
   });
   it("normalizes pricing and arrondissement labels", () => {
     expect(priceLabel("gratuit")).toBe("Gratuit"); expect(priceLabel("PAID")).toBe("Payant"); expect(priceLabel(null)).toBe("Tarif à confirmer");
+    expect(priceLabel("FREE_CONDITIONAL")).toBe("Gratuit sous condition");
     expect(arrondissementLabel(11)).toBe("Paris 11e"); expect(arrondissementLabel(null)).toBe("Paris");
   });
 });

@@ -33,6 +33,7 @@ export function formatDateRange(startValue: string | null, endValue: string | nu
 }
 export function priceLabel(value: PricingCategory | string | null | undefined) {
   const normalized = value?.toUpperCase();
+  if (normalized === "FREE_CONDITIONAL") return "Gratuit sous condition";
   if (normalized === "FREE" || normalized === "GRATUIT") return "Gratuit";
   if (normalized === "PAID" || normalized === "PAYANT") return "Payant";
   return "Tarif à confirmer";

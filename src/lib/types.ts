@@ -1,4 +1,4 @@
-export type PricingCategory = "FREE" | "PAID" | "NOT_SPECIFIED";
+export type PricingCategory = "FREE" | "FREE_CONDITIONAL" | "PAID" | "NOT_SPECIFIED";
 export type EventPeriod = "TODAY" | "TOMORROW" | "THIS_WEEK" | "THIS_MONTH";
 export type EventEnvironment = "INDOOR" | "OUTDOOR" | "UNKNOWN";
 export type EventSort = "START_DATE" | "RELEVANCE";

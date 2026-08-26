@@ -27,6 +27,7 @@ describe("buildTodayRails", () => {
   it("fills rule-based rails from Track A/B fields", () => {
     const events = [
       event({ id: "free", pricing: "FREE" }),
+      event({ id: "cond", pricing: "FREE_CONDITIONAL" }),
       event({ id: "outdoor", environment: "OUTDOOR" }),
       event({ id: "evening", displayStartAt: "2026-08-26T21:00:00+02:00" }),
       event({ id: "morning", displayStartAt: "2026-08-26T09:00:00+02:00" }),
@@ -34,7 +35,7 @@ describe("buildTodayRails", () => {
       event({ id: "ongoing", endAt: "2026-09-10T20:00:00+02:00" }),
     ];
     const rails = buildTodayRails(events, TODAY);
-    expect(rails.gratuit.map((e) => e.id)).toEqual(["free"]);
+    expect(rails.gratuit.map((e) => e.id)).toEqual(["free", "cond"]);
     expect(rails.pleinAir.map((e) => e.id)).toEqual(["outdoor"]);
     expect(rails.ceSoir.map((e) => e.id)).toEqual(["evening"]);
     expect(rails.dernierJour.map((e) => e.id)).toEqual(["lastday"]);

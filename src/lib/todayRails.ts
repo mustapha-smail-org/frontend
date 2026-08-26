@@ -66,7 +66,9 @@ export function buildTodayRails(events: EventSummary[], today: string): TodayRai
       e.enrichment.moodAffinities.includes("ROMANTIQUE")))
     .slice(0, RAIL_SIZE);
 
-  const gratuit = events.filter((e) => e.pricing === "FREE").slice(0, RAIL_SIZE);
+  const gratuit = events
+    .filter((e) => e.pricing === "FREE" || e.pricing === "FREE_CONDITIONAL")
+    .slice(0, RAIL_SIZE);
   const pleinAir = events.filter((e) => e.environment === "OUTDOOR").slice(0, RAIL_SIZE);
   const ceSoir = events
     .filter((e) => { const h = parisHour(e.displayStartAt); return h != null && h >= 17; })

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const nullableString = z.string().nullable();
-const pricing = z.enum(["FREE", "PAID", "NOT_SPECIFIED"]);
+const pricing = z.enum(["FREE", "FREE_CONDITIONAL", "PAID", "NOT_SPECIFIED"]);
 const environment = z.enum(["INDOOR", "OUTDOOR", "UNKNOWN"]);
 const enrichment = z.object({
   categories: z.array(z.string()), moodAffinities: z.array(z.string()),
