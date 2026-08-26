@@ -13,7 +13,7 @@ import {
 } from "@/lib/discoveryFilters";
 
 const base: DiscoveryFilters = {
-  query: "", date: "", preset: "", categories: [], arrondissements: [], pricing: "",
+  query: "", date: "", preset: "", categories: [], arrondissements: [], pricing: "", environment: "",
 };
 
 describe("readDiscoveryFilters", () => {
@@ -21,7 +21,7 @@ describe("readDiscoveryFilters", () => {
     const params = new URLSearchParams("q=jazz&periode=TODAY&cat=Concerts&cat=Expos&zone=1&zone=OUTSIDE_PARIS&prix=FREE");
     expect(readDiscoveryFilters(params)).toEqual({
       query: "jazz", date: "", preset: "TODAY",
-      categories: ["Concerts", "Expos"], arrondissements: ["1", "OUTSIDE_PARIS"], pricing: "FREE",
+      categories: ["Concerts", "Expos"], arrondissements: ["1", "OUTSIDE_PARIS"], pricing: "FREE", environment: "",
     });
   });
   it("lets a specific date supersede a preset", () => {
@@ -68,6 +68,13 @@ describe("discoveryApiParams", () => {
     expect(params.getAll("arrondissements")).toEqual(["1", "OUTSIDE_PARIS"]);
     expect(params.get("pricing")).toBe("FREE");
     expect(params.get("cursor")).toBe("cur");
+    expect(params.get("sort")).toBe("RELEVANCE");
+  });
+  it("round-trips the environment (indoor/outdoor) filter", () => {
+    expect(discoveryApiParams({ ...base, environment: "OUTDOOR" }).get("environment")).toBe("OUTDOOR");
+    expect(discoveryUrlParams({ ...base, environment: "INDOOR" }).get("cadre")).toBe("INDOOR");
+    expect(readDiscoveryFilters(new URLSearchParams("cadre=OUTDOOR")).environment).toBe("OUTDOOR");
+    expect(hasActiveFilters({ ...base, environment: "INDOOR" })).toBe(true);
   });
   it("emits period when only a preset is set", () => {
     const params = discoveryApiParams({ ...base, preset: "TODAY" });

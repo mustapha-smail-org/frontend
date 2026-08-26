@@ -1,6 +1,19 @@
-export type PricingCategory = "FREE" | "PAID" | "NOT_SPECIFIED";
+export type PricingCategory = "FREE" | "FREE_CONDITIONAL" | "PAID" | "NOT_SPECIFIED";
 export type EventPeriod = "TODAY" | "TOMORROW" | "THIS_WEEK" | "THIS_MONTH";
 export type EventEnvironment = "INDOOR" | "OUTDOOR" | "UNKNOWN";
+export type EventSort = "START_DATE" | "RELEVANCE";
+
+export interface EventEnrichment {
+  categories: string[];
+  moodAffinities: string[];
+  socialContexts: string[];
+  semanticTags: string[];
+  energyLevel: string | null;
+  environmentFallback: string | null;
+  uniquenessScore: number | null;
+  qualityScore: number | null;
+  rankScore: number | null;
+}
 
 export interface EventSchedule {
   startAt: string | null;
@@ -26,6 +39,7 @@ export interface EventSummary extends EventSchedule {
   imageCredit: string | null;
   sourceUpdatedAt: string | null;
   environment: EventEnvironment;
+  enrichment: EventEnrichment | null;
 }
 
 export interface EventDetail extends Omit<EventSchedule, "scheduleLabel"> {
@@ -56,6 +70,7 @@ export interface EventDetail extends Omit<EventSchedule, "scheduleLabel"> {
   } | null;
   occurrences: Array<{ start: string | null; end: string | null }>;
   environment: EventEnvironment;
+  enrichment: EventEnrichment | null;
 }
 
 export interface EventMapMarker {
@@ -88,5 +103,5 @@ export interface EventSearchOptions {
   period?: EventPeriod; date?: string; query?: string;
   category?: string; categories?: string[];
   arrondissements?: string[]; pricing?: "ALL" | PricingCategory;
-  cursor?: string; limit?: number;
+  cursor?: string; limit?: number; sort?: EventSort; environment?: string;
 }

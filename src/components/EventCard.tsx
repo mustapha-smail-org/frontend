@@ -3,11 +3,14 @@ import Link from "next/link";
 import { CalendarDays, ImageOff, MapPin } from "lucide-react";
 import type { EventSummary } from "@/lib/types";
 import { formatSchedule } from "@/lib/format";
+import { displayCategory, highlightFlag } from "@/lib/enrichmentLabels";
 
 /** Prototype grid/list card: image with category badge (top-left) + Gratuit
- *  badge (top-right, when free), then title and two icon meta rows. */
+ *  badge (top-right, when free), a rare standout flag (bottom-left), then title
+ *  and two icon meta rows. */
 export function EventCard({ event, priority = false, compact = false }: { event: EventSummary; priority?: boolean; compact?: boolean }) {
-  const category = event.categories[0];
+  const category = displayCategory(event);
+  const flag = highlightFlag(event);
   const free = event.pricing === "FREE";
   const place = [event.venue, event.arrondissement ? `${event.arrondissement}e` : null].filter(Boolean).join(" · ") || "Paris";
   return (
@@ -19,6 +22,7 @@ export function EventCard({ event, priority = false, compact = false }: { event:
             : <div className="image-missing"><ImageOff aria-hidden="true" /><span>Visuel non fourni</span></div>}
           {category && <span className="cat-badge">{category}</span>}
           {free && <span className="free-badge">Gratuit</span>}
+          {flag && <span className={`highlight-badge highlight-${flag.kind}`}>{flag.label}</span>}
         </div>
         <div className="event-card-body">
           <h2 className="clamp-2">{event.title}</h2>

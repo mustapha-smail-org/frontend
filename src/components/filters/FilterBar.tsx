@@ -7,6 +7,7 @@ import { BottomSheet } from "@astryxdesign/core/BottomSheet";
 import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { DateFilter } from "@/components/filters/DateFilter";
 import { PriceFilter } from "@/components/filters/PriceFilter";
+import { EnvironmentFilter } from "@/components/filters/EnvironmentFilter";
 import { FacetMultiSelect } from "@/components/filters/FacetMultiSelect";
 import { arrondissementLabel, hasActiveFilters, type DiscoveryFilters } from "@/lib/discoveryFilters";
 import type { EventFacets } from "@/lib/types";
@@ -23,6 +24,12 @@ function dateSummary(filters: DiscoveryFilters): string | undefined {
 function priceSummary(pricing: string): string | undefined {
   if (pricing === "FREE") return "Gratuit";
   if (pricing === "PAID") return "Payant";
+  return undefined;
+}
+
+function environmentSummary(environment: string): string | undefined {
+  if (environment === "INDOOR") return "Intérieur";
+  if (environment === "OUTDOOR") return "Extérieur";
   return undefined;
 }
 
@@ -114,6 +121,10 @@ export function FilterBar({ filters, facets, onChange, onReset }: {
 
       <FilterDropdown isMobile={isMobile} label="Prix" summary={priceSummary(filters.pricing)} active={Boolean(filters.pricing)}>
         {(close) => <PriceFilter pricing={filters.pricing} onChange={(pricing) => onChange({ pricing })} onDone={close} />}
+      </FilterDropdown>
+
+      <FilterDropdown isMobile={isMobile} label="Cadre" summary={environmentSummary(filters.environment)} active={Boolean(filters.environment)}>
+        {(close) => <EnvironmentFilter environment={filters.environment} onChange={(environment) => onChange({ environment })} onDone={close} />}
       </FilterDropdown>
 
       <FilterDropdown

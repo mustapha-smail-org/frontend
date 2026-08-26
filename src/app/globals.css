@@ -78,6 +78,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .image-missing { display:flex; width:100%; height:100%; align-items:center; justify-content:center; flex-direction:column; gap:.55rem; background:var(--surface-2); color:var(--muted); font-size:.75rem; font-weight:650; text-align:center; }
 .cat-badge { position:absolute; top:.6rem; left:.6rem; padding:.22rem .55rem; border-radius:20px; background:color-mix(in srgb,var(--card) 92%,transparent); color:var(--ink); font-size:.64rem; font-weight:700; letter-spacing:.02em; text-transform:capitalize; backdrop-filter:blur(2px); }
 .free-badge { position:absolute; top:.6rem; right:.6rem; padding:.22rem .55rem; border-radius:20px; background:#E4F4EC; color:#157A4E; font-size:.62rem; font-weight:800; }
+.highlight-badge { position:absolute; bottom:.6rem; left:.6rem; padding:.2rem .5rem; border-radius:20px; color:#fff; font-size:.58rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+.highlight-quality { background:var(--red); }
+.highlight-unique { background:var(--blue); }
+.enrich-chips { display:flex; flex-wrap:wrap; gap:.5rem; margin:0; }
+.enrich-chip { display:inline-flex; align-items:center; padding:.35rem .75rem; border-radius:20px; background:var(--surface-2); color:var(--ink); font-size:.78rem; font-weight:650; border:1px solid var(--line); }
+.enrich-tags { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:1rem; }
+.enrich-tag { display:inline-flex; padding:.3rem .65rem; border-radius:20px; color:var(--muted); font-size:.75rem; font-weight:600; border:1px solid var(--line); transition:color .15s,border-color .15s; }
+.enrich-tag:hover { color:var(--red); border-color:var(--red); }
 .event-card-body { padding:.85rem .95rem 1rem; display:flex; flex-direction:column; gap:.5rem; }
 .event-card h2 { margin:0; color:var(--ink); font-size:.95rem; font-weight:680; line-height:1.28; min-height:2.4rem; }
 .event-meta-row { display:flex; align-items:center; gap:.4rem; margin:0; color:var(--muted); font-size:.78rem; } .event-meta-row svg { flex:0 0 auto; }
@@ -167,6 +175,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .today-wip strong { display:flex; align-items:center; gap:.6rem; color:var(--ink); font-size:1rem; font-weight:700; }
 .today-wip p { margin:.35rem 0 0; color:var(--muted); font-size:.86rem; line-height:1.55; max-width:52rem; }
 .wip-chip { display:inline-block; padding:.12rem .5rem; border-radius:20px; background:color-mix(in srgb,var(--red) 14%,var(--card)); color:var(--red); font-size:.6rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+/* Today rails: a chip bar that lists every section at a glance and jumps to it,
+   then each section is a horizontal-scroll row instead of a tall wrapping grid. */
+.today-railnav { position:sticky; top:0; z-index:20; padding-top:.85rem; padding-bottom:.85rem; background:color-mix(in srgb,var(--surface) 92%,transparent); backdrop-filter:blur(6px); border-bottom:1px solid var(--line); }
+.today-railnav-inner { display:flex; gap:.5rem; overflow-x:auto; scrollbar-width:none; }
+.today-railnav-inner::-webkit-scrollbar { display:none; }
+.railnav-chip { flex:0 0 auto; display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .85rem; border-radius:20px; background:var(--card); border:1px solid var(--line); color:var(--ink); font-size:.8rem; font-weight:680; white-space:nowrap; transition:border-color .15s,color .15s; }
+.railnav-chip:hover { border-color:var(--red); color:var(--red); }
+.today-rail-section { padding-top:3.25rem; padding-bottom:3.25rem; scroll-margin-top:4.5rem; }
+.today-rail-section .section-heading { margin-bottom:1.4rem; }
+.today-rail { display:flex; gap:1.25rem; overflow-x:auto; scroll-snap-type:x proximity; padding-bottom:.6rem; scrollbar-width:thin; }
+.today-rail-item { flex:0 0 clamp(240px,72vw,290px); scroll-snap-align:start; }
 
 /* Detail */
 .event-hero { position:relative; min-height:clamp(38rem,78vh,52rem); background:var(--navy); color:#fff; overflow:hidden; } .event-hero-scrim { background:linear-gradient(90deg,rgba(4,20,36,.96),rgba(4,20,36,.55) 54%,rgba(4,20,36,.08)),linear-gradient(to top,rgba(4,20,36,.75),transparent 55%); }

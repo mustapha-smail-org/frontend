@@ -12,10 +12,11 @@ export interface DiscoveryFilters {
   categories: string[];
   arrondissements: string[];
   pricing: string; // "" | FREE | PAID
+  environment: string; // "" | INDOOR | OUTDOOR
 }
 
 export const EMPTY_DISCOVERY_FILTERS: DiscoveryFilters = {
-  query: "", date: "", preset: "", categories: [], arrondissements: [], pricing: "",
+  query: "", date: "", preset: "", categories: [], arrondissements: [], pricing: "", environment: "",
 };
 
 /** Turn a plain SSR searchParams record into a URLSearchParams for uniform reading. */
@@ -39,6 +40,7 @@ export function readDiscoveryFilters(params: URLSearchParams): DiscoveryFilters 
     categories: params.getAll("cat"),
     arrondissements: params.getAll("zone"),
     pricing: params.get("prix") ?? "",
+    environment: params.get("cadre") ?? "",
   };
 }
 
@@ -51,18 +53,20 @@ export function discoveryUrlParams(filters: DiscoveryFilters): URLSearchParams {
   for (const category of filters.categories) params.append("cat", category);
   for (const arrondissement of filters.arrondissements) params.append("zone", arrondissement);
   if (filters.pricing) params.set("prix", filters.pricing);
+  if (filters.environment) params.set("cadre", filters.environment);
   return params;
 }
 
 /** Build the catalog API query params for a list/map fetch. */
 export function discoveryApiParams(filters: DiscoveryFilters, cursor?: string, limit = 50): URLSearchParams {
-  const params = new URLSearchParams({ sort: "START_DATE", limit: String(limit) });
+  const params = new URLSearchParams({ sort: "RELEVANCE", limit: String(limit) });
   if (filters.query.trim()) params.set("query", filters.query.trim());
   if (filters.date) params.set("date", filters.date);
   else if (filters.preset) params.set("period", filters.preset);
   for (const category of filters.categories) params.append("categories", category);
   for (const arrondissement of filters.arrondissements) params.append("arrondissements", arrondissement);
   if (filters.pricing) params.set("pricing", filters.pricing);
+  if (filters.environment) params.set("environment", filters.environment);
   if (cursor) params.set("cursor", cursor);
   return params;
 }
@@ -76,6 +80,7 @@ export function toSearchOptions(filters: DiscoveryFilters, limit?: number): Even
     categories: filters.categories,
     arrondissements: filters.arrondissements,
     pricing: (filters.pricing as PricingCategory) || undefined,
+    environment: filters.environment || undefined,
     limit,
   };
 }
@@ -84,7 +89,7 @@ export function toSearchOptions(filters: DiscoveryFilters, limit?: number): Even
 export function hasActiveFilters(filters: DiscoveryFilters): boolean {
   return Boolean(
     filters.query.trim() || filters.date || filters.preset || filters.pricing ||
-    filters.categories.length || filters.arrondissements.length,
+    filters.categories.length || filters.arrondissements.length || filters.environment,
   );
 }
 
