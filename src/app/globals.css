@@ -78,6 +78,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .image-missing { display:flex; width:100%; height:100%; align-items:center; justify-content:center; flex-direction:column; gap:.55rem; background:var(--surface-2); color:var(--muted); font-size:.75rem; font-weight:650; text-align:center; }
 .cat-badge { position:absolute; top:.6rem; left:.6rem; padding:.22rem .55rem; border-radius:20px; background:color-mix(in srgb,var(--card) 92%,transparent); color:var(--ink); font-size:.64rem; font-weight:700; letter-spacing:.02em; text-transform:capitalize; backdrop-filter:blur(2px); }
 .free-badge { position:absolute; top:.6rem; right:.6rem; padding:.22rem .55rem; border-radius:20px; background:#E4F4EC; color:#157A4E; font-size:.62rem; font-weight:800; }
+.highlight-badge { position:absolute; bottom:.6rem; left:.6rem; padding:.2rem .5rem; border-radius:20px; color:#fff; font-size:.58rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+.highlight-quality { background:var(--red); }
+.highlight-unique { background:var(--blue); }
+.enrich-chips { display:flex; flex-wrap:wrap; gap:.5rem; margin:0; }
+.enrich-chip { display:inline-flex; align-items:center; padding:.35rem .75rem; border-radius:20px; background:var(--surface-2); color:var(--ink); font-size:.78rem; font-weight:650; border:1px solid var(--line); }
+.enrich-tags { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:1rem; }
+.enrich-tag { display:inline-flex; padding:.3rem .65rem; border-radius:20px; color:var(--muted); font-size:.75rem; font-weight:600; border:1px solid var(--line); transition:color .15s,border-color .15s; }
+.enrich-tag:hover { color:var(--red); border-color:var(--red); }
 .event-card-body { padding:.85rem .95rem 1rem; display:flex; flex-direction:column; gap:.5rem; }
 .event-card h2 { margin:0; color:var(--ink); font-size:.95rem; font-weight:680; line-height:1.28; min-height:2.4rem; }
 .event-meta-row { display:flex; align-items:center; gap:.4rem; margin:0; color:var(--muted); font-size:.78rem; } .event-meta-row svg { flex:0 0 auto; }

@@ -11,6 +11,7 @@ import { ReportForm } from "@/components/ReportForm";
 import { ApiError, getEventBySlug, getEvents } from "@/lib/api";
 import { cleanRichText, plainText, safeExternalUrl } from "@/lib/content";
 import { arrondissementLabel, formatDateRange, formatSchedule, priceLabel } from "@/lib/format";
+import { energyLabel, environmentLabel, moodLabel } from "@/lib/enrichmentLabels";
 import type { EventSummary } from "@/lib/types";
 
 type PageProps = { params: Promise<{ slug: string }> };
@@ -40,6 +41,7 @@ export default async function EventPage({ params }: PageProps) {
     <div className="event-layout shell-pad"><div className="mx-auto grid max-w-[88rem] gap-12 lg:grid-cols-[minmax(0,1fr)_23rem]">
       <div className="event-main">
         <section><p className="eyebrow">L’événement</p><h2>À propos</h2>{description ? <div className="rich-text" dangerouslySetInnerHTML={{ __html: description }}/> : <p className="muted-copy">La source officielle ne fournit pas encore de description détaillée.</p>}</section>
+        {event.enrichment && <section><p className="eyebrow">Ambiance</p><h2>L’esprit de la sortie</h2><div className="enrich-chips">{environmentLabel(event.environment) && <span className="enrich-chip">{environmentLabel(event.environment)}</span>}{energyLabel(event.enrichment.energyLevel) && <span className="enrich-chip">{energyLabel(event.enrichment.energyLevel)}</span>}{event.enrichment.moodAffinities.map((mood) => <span key={mood} className="enrich-chip">{moodLabel(mood)}</span>)}</div>{event.enrichment.semanticTags.length > 0 && <div className="enrich-tags">{event.enrichment.semanticTags.map((tag) => <Link key={tag} href={`/decouvrir?q=${encodeURIComponent(tag)}`} className="enrich-tag">{tag}</Link>)}</div>}</section>}
         {(event.occurrences.length > 0 || dateDetails) && <section><p className="eyebrow">Dates et horaires</p><h2>Quand venir ?</h2>{dateDetails && <div className="rich-text compact" dangerouslySetInnerHTML={{ __html: dateDetails }}/>} {event.occurrences.length > 0 && <ul className="occurrences">{event.occurrences.slice(0, 12).map((item, index) => <li key={`${item.start}-${index}`}><CalendarDays/><span>{formatDateRange(item.start, item.end)}</span></li>)}</ul>}</section>}
         {(event.transport || accessibility) && <section><p className="eyebrow">Sur place</p><h2>Accès et accueil</h2>{event.transport && <div className="practical-line"><Navigation/><div><strong>Transports</strong><div className="rich-text compact" dangerouslySetInnerHTML={{ __html: cleanRichText(event.transport) }}/></div></div>}{accessibility && <div className="accessibility-grid"><AccessibilityItem icon={Accessibility} label="Accès fauteuil" value={accessibility.wheelchairAccessible}/><AccessibilityItem icon={Eye} label="Accueil déficience visuelle" value={accessibility.blindAccessible}/><AccessibilityItem icon={Ear} label="Accueil déficience auditive" value={accessibility.deafAccessible}/>{accessibility.signLanguage && <AccessibilityItem icon={Accessibility} label="Langue des signes" text={accessibility.signLanguage}/>}</div>}</section>}
       </div>
