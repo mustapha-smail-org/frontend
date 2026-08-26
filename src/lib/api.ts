@@ -21,6 +21,7 @@ export function eventSearchParams(options: EventSearchOptions = {}) {
   for (const category of options.categories ?? []) params.append("categories", category);
   for (const arrondissement of options.arrondissements ?? []) params.append("arrondissements", arrondissement);
   if (options.pricing && options.pricing !== "ALL") params.set("pricing", options.pricing);
+  if (options.environment) params.set("environment", options.environment);
   if (options.cursor) params.set("cursor", options.cursor);
   return params;
 }

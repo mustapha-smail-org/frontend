@@ -103,5 +103,5 @@ export interface EventSearchOptions {
   period?: EventPeriod; date?: string; query?: string;
   category?: string; categories?: string[];
   arrondissements?: string[]; pricing?: "ALL" | PricingCategory;
-  cursor?: string; limit?: number; sort?: EventSort;
+  cursor?: string; limit?: number; sort?: EventSort; environment?: string;
 }

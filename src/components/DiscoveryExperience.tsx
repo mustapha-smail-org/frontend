@@ -25,13 +25,14 @@ export function DiscoveryExperience({ initialEvents, initialMap, initialFacets, 
   const [categories, setCategories] = useState(initialFilters.categories);
   const [arrondissements, setArrondissements] = useState(initialFilters.arrondissements);
   const [pricing, setPricing] = useState(initialFilters.pricing);
+  const [environment, setEnvironment] = useState(initialFilters.environment);
   const [facets, setFacets] = useState(initialFacets);
   const [view, setView] = useState<View>("list");
   const [events, setEvents] = useState(initialEvents); const [markers, setMarkers] = useState(initialMap.items);
   const [mapCursor, setMapCursor] = useState(initialMap.nextCursor); const [mapHasNext, setMapHasNext] = useState(initialMap.hasNext);
   const [error, setError] = useState(initialError); const [selectedId, setSelectedId] = useState<string | null>(null); const [isPending, startTransition] = useTransition();
 
-  function filters(): DiscoveryFilters { return { query, date, preset, categories, arrondissements, pricing }; }
+  function filters(): DiscoveryFilters { return { query, date, preset, categories, arrondissements, pricing, environment }; }
   async function refresh(next = filters()) {
     setError(false);
     const params = discoveryApiParams(next);
@@ -64,6 +65,7 @@ export function DiscoveryExperience({ initialEvents, initialMap, initialFacets, 
     if (next.categories !== undefined) setCategories(next.categories);
     if (next.arrondissements !== undefined) setArrondissements(next.arrondissements);
     if (next.pricing !== undefined) setPricing(next.pricing);
+    if (next.environment !== undefined) setEnvironment(next.environment);
     startTransition(() => { void refresh(values); });
   }
   function reset() {
