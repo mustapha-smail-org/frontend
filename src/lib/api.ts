@@ -12,7 +12,7 @@ export class ApiError extends Error {
 
 export function eventSearchParams(options: EventSearchOptions = {}) {
   const params = new URLSearchParams();
-  params.set("sort", "START_DATE");
+  params.set("sort", options.sort ?? "START_DATE");
   params.set("limit", String(options.limit ?? 12));
   if (options.period) params.set("period", options.period);
   if (options.date) params.set("date", options.date);

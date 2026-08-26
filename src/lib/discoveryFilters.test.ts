@@ -68,6 +68,7 @@ describe("discoveryApiParams", () => {
     expect(params.getAll("arrondissements")).toEqual(["1", "OUTSIDE_PARIS"]);
     expect(params.get("pricing")).toBe("FREE");
     expect(params.get("cursor")).toBe("cur");
+    expect(params.get("sort")).toBe("RELEVANCE");
   });
   it("emits period when only a preset is set", () => {
     const params = discoveryApiParams({ ...base, preset: "TODAY" });

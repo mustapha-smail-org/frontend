@@ -1,6 +1,7 @@
 export type PricingCategory = "FREE" | "PAID" | "NOT_SPECIFIED";
 export type EventPeriod = "TODAY" | "TOMORROW" | "THIS_WEEK" | "THIS_MONTH";
 export type EventEnvironment = "INDOOR" | "OUTDOOR" | "UNKNOWN";
+export type EventSort = "START_DATE" | "RELEVANCE";
 
 export interface EventEnrichment {
   categories: string[];
@@ -102,5 +103,5 @@ export interface EventSearchOptions {
   period?: EventPeriod; date?: string; query?: string;
   category?: string; categories?: string[];
   arrondissements?: string[]; pricing?: "ALL" | PricingCategory;
-  cursor?: string; limit?: number;
+  cursor?: string; limit?: number; sort?: EventSort;
 }

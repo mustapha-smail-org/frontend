@@ -56,7 +56,7 @@ export function discoveryUrlParams(filters: DiscoveryFilters): URLSearchParams {
 
 /** Build the catalog API query params for a list/map fetch. */
 export function discoveryApiParams(filters: DiscoveryFilters, cursor?: string, limit = 50): URLSearchParams {
-  const params = new URLSearchParams({ sort: "START_DATE", limit: String(limit) });
+  const params = new URLSearchParams({ sort: "RELEVANCE", limit: String(limit) });
   if (filters.query.trim()) params.set("query", filters.query.trim());
   if (filters.date) params.set("date", filters.date);
   else if (filters.preset) params.set("period", filters.preset);
