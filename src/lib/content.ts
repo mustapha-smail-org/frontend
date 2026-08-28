@@ -1,7 +1,7 @@
 import sanitizeHtml from "sanitize-html";
 
 export function cleanRichText(value: string | null) {
-  return sanitizeHtml(value ?? "", {
+  return sanitizeHtml(value?.replace(/\r\n/g, "<br/>").replace(/\n/g, "<br/>") ?? "", {
     allowedTags: ["p", "br", "strong", "b", "em", "i", "ul", "ol", "li", "h2", "h3", "blockquote", "a"],
     allowedAttributes: { a: ["href", "target", "rel"] },
     allowedSchemes: ["http", "https", "mailto"],
