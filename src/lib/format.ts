@@ -5,6 +5,7 @@ const dayOnly = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeri
 const dayOnlyYear = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
 const dayTimeYear = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
 const shortDay = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
+const timeDay = new Intl.DateTimeFormat("fr-FR", {hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"});
 
 function validDate(value: string | null | undefined) {
   if (!value) return null;
@@ -29,6 +30,9 @@ export function formatDateRange(startValue: string | null, endValue: string | nu
   const start = validDate(startValue); const end = validDate(endValue);
   if (!start) return "Horaire à confirmer";
   if (!end) return dayTime.format(start);
+  if (start.toDateString() === end.toDateString()) {
+    return `${dayTime.format(start)} jusqu'à ${timeDay.format(end)}`;
+  }
   return `${dayTime.format(start)} - ${shortDay.format(end)}`;
 }
 export function priceLabel(value: PricingCategory | string | null | undefined) {
